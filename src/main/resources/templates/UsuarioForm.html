@@ -1,0 +1,405 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="https://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+    <head>
+        <title>Registrar Usuario</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <style>
+            body {
+                background: radial-gradient(circle, rgba(0,181,252,1) 0%, rgba(18,52,64,1) 49%, rgba(2,10,15,1) 100%);
+                color: #fff;
+                font-family: Arial, sans-serif;
+                min-height: 100vh;
+
+            }
+            .card-form {
+                background: #fff;
+                color: #000;
+                border-radius: 12px;
+                padding: 24px;
+                max-width: 1100px;
+                margin: 0 auto;
+                box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+            }
+            .img-preview {
+                width: 120px;
+                height: 120px;
+                object-fit: cover;
+                border-radius: 6px;
+            }
+            .error {
+                border-color: red;
+            }
+            .correct {
+                border-color: green;
+            }
+        </style>
+    </head>
+    <body layout:fragment="body">
+        <div class="card-form">
+            <div class="text-center mb-3">
+                <h1 class="h4"><i class="bi bi-person-plus"></i> Registrar Usuario</h1>
+            </div>
+
+            <form th:action="@{/usuario/add}" th:object="${Usuario}" method="post" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <!-- Nombre, Apellidos -->
+                    <div class="col-md-4">
+                        <label class="form-label"><i class="bi bi-person"></i> Nombre</label>
+                        <input type="text" placeholder="Nombre" class="form-control"
+                               th:field="*{Nombre}"
+                               th:classappend="${#fields.hasErrors('Nombre')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{Nombre}"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label"><i class="bi bi-person"></i> Apellido Paterno</label>
+                        <input type="text" placeholder="Apellido Paterno" class="form-control"
+                               th:field="*{ApellidoPat}"
+                               th:classappend="${#fields.hasErrors('ApellidoPat')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{ApellidoPat}"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label"><i class="bi bi-person"></i> Apellido Materno</label>
+                        <input type="text" placeholder="Apellido Materno" class="form-control"
+                               th:field="*{ApellidoMat}"
+                               th:classappend="${#fields.hasErrors('ApellidoMat')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{ApellidoMat}"></span>
+                    </div>
+
+                    <!-- Fecha de nacimiento y CURP -->
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="bi bi-calendar-date"></i> Fecha de Nacimiento</label>
+                        <input class="form-control" type="date"
+                               th:field="*{FechaNacimiento}"
+                               th:classappend="${#fields.hasErrors('FechaNacimiento')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{FechaNacimiento}"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="bi bi-credit-card-2-front"></i> CURP</label>
+                        <input class="form-control" type="text" placeholder="CURP"
+                               th:field="*{Curp}"
+                               th:classappend="${#fields.hasErrors('Curp')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{Curp}"></span>
+                    </div>
+
+                    <!-- Sexo y Rol -->
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-gender-ambiguous"></i> Sexo</label>
+                        <select class="form-select"
+                                th:field="*{Sexo}"
+                                th:classappend="${#fields.hasErrors('Sexo')} ? 'is-invalid' : ''">
+                            <option value="">Seleccione un Sexo</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                        </select>
+                        <span class="text-danger" th:errors="*{Sexo}"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="rolUsuario" class="form-label"><i class="bi bi-person-badge"></i> Rol</label>
+                        <select class="form-select" id="rolUsuario" th:field="*{RolJPA.IdRol}" th:classappend="${#fields.hasErrors('RolJPA.IdRol')} ? 'is-invalid' : ''">
+                            <option value="">Selecciona un Rol</option>
+                            <option th:each="RolJPA : ${roles}" th:value="${RolJPA.IdRol}" th:text="${RolJPA.Nombre}"></option>
+                        </select>
+                        <span class="text-danger" th:errors="*{RolJPA.IdRol}"></span>
+                    </div>
+
+                    <!-- UserName, Teléfono, Celular -->
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="bi bi-person-circle"></i> User Name</label>
+                        <input class="form-control" type="text" placeholder="UserName"
+                               th:field="*{UserName}"
+                               th:classappend="${#fields.hasErrors('UserName')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{UserName}"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-telephone"></i> Teléfono</label>
+                        <input class="form-control" type="text" placeholder="Telefono"
+                               th:field="*{Telefono}"
+                               th:classappend="${#fields.hasErrors('Telefono')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{Telefono}"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-phone"></i> Celular</label>
+                        <input class="form-control" type="text" placeholder="Celular"
+                               th:field="*{Celular}"
+                               th:classappend="${#fields.hasErrors('Celular')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{Celular}"></span>
+                    </div>
+
+                    <!-- Email y Password -->
+                    <div class="col-md-4">
+                        <label class="form-label"><i class="bi bi-envelope"></i> Email</label>
+                        <input class="form-control" type="email" placeholder="Email"
+                               th:field="*{Email}"
+                               th:classappend="${#fields.hasErrors('Email')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{Email}"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label"><i class="bi bi-lock"></i> Password</label>
+                        <input class="form-control" type="password" placeholder="Password"
+                               th:field="*{Password}"
+                               th:classappend="${#fields.hasErrors('Password')} ? 'is-invalid' : ''">
+                        <span class="text-danger" th:errors="*{Password}"></span>
+                    </div>
+
+
+                    <div class="col-md-4 text-center">
+                        <label class="form-label"><i class="bi bi-image"></i> Imagen de perfil</label>
+                        <input type="file" class="form-control" id="imagenFile" name="imagenFile" accept="image/*">
+                        <input type="hidden" th:field="*{Imagen}" id="imagenHidden">
+                        <img id="preview" class="img-preview mt-2" src="https://cdn-icons-png.flaticon.com/512/3177/3177440.png" alt="Preview">
+                    </div>
+
+
+                    <div class="col-12"><hr></div>
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="bi bi-house-door"></i> Calle</label>
+                        <input class="form-control" type="text" placeholder="Calle"
+                               th:field="*{DireccionesJPA[0].Calle}">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-door-open"></i> Número Int.</label>
+                        <input class="form-control" type="text" placeholder="Numero Interior"
+                               th:field="*{DireccionesJPA[0].NumeroInterior}">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-door-closed"></i> Número Ext.</label>
+                        <input class="form-control" type="text" placeholder="Numero Exterior"
+                               th:field="*{DireccionesJPA[0].NumeroExterior}">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Código Postal</label>
+                        <input type="text" id="txtCP" class="form-control" placeholder="CodigoPostal" onblur="buscarPorCP()">
+                    </div>
+
+                    <!-- DDLS dependientes: País - Estado - Municipio - Colonia-->
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-globe-americas"></i> País</label>
+                        <select id="ddlPais" class="form-select" th:field="*{DireccionesJPA[0].ColoniaJPA.MunicipioJPA.EstadoJPA.PaisJPA.idPais}">
+                            <option value="0" selected>Selecciona un país</option>
+                            <option th:each="PaisJPA : ${paises}" th:value="${PaisJPA.IdPais}" th:text="${PaisJPA.Nombre}"></option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-map"></i> Estado</label>
+                        <select id="ddlEstado" class="form-select"th:field="*{DireccionesJPA[0].ColoniaJPA.MunicipioJPA.EstadoJPA.IdEstado}">
+                            <option value="0" selected>Selecciona un estado</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-building"></i> Municipio</label>
+                        <select id="ddlMunicipio" class="form-select" th:field="*{DireccionesJPA[0].ColoniaJPA.MunicipioJPA.IdMunicipio}">
+                            <option value="0" selected>Selecciona un municipio</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="bi bi-geo"></i> Colonia</label>
+                        <select id="ddlColonia" name="DireccionesJPA[0].ColoniaJPA.IdColonia" class="form-select" th:field="*{DireccionesJPA[0].ColoniaJPA.IdColonia}">
+                            <option value="0" selected>Selecciona una colonia</option>
+                        </select>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="col-12 text-center mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-save"></i> Agregar
+                        </button>
+                        <a th:href="@{/usuario}" class="btn btn-secondary btn-lg ms-2">
+                            <i class="bi bi-arrow-left"></i> Regresar
+                        </a>
+                    </div>
+                </div> 
+            </form>
+        </div> 
+
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            $(document).ready(function () {
+
+            $("#imagenFile").on("change", function () {
+            const file = this.files[0];
+                    if (!file) {
+            $("#preview").attr("src", "https://cdn-icons-png.flaticon.com/512/3177/3177440.png");
+                    $("#imagenHidden").val('');
+                    return;
+            }
+            const reader = new FileReader();
+                    reader.onload = function (e) {
+                    $("#preview").attr("src", e.target.result);
+                            // Guardar base64 en el campo que Thymeleaf mapeará a Usuario.Imagen
+                            $("#imagenHidden").val(e.target.result);
+                    };
+                    reader.readAsDataURL(file);
+            });
+            }
+            );
+        </script>
+        <script>
+            $(document).ready(function () {
+            function limpiarSelect(selectId, texto) {
+                $(selectId).empty().append('<option value="" selected>' + texto + '</option>');
+            }
+
+            $('#modalAgregarDireccion').on('show.bs.modal', function () {
+                limpiarSelect("#ddlEstado", "Seleccione un estado");
+                limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+                limpiarSelect("#ddlColonia", "Seleccione una colonia");
+            });
+            $("#ddlPais").change(function () {
+                let IdPais = $(this).val();
+                limpiarSelect("#ddlEstado", "Seleccione un estado");
+                limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+                limpiarSelect("#ddlColonia", "Seleccione una colonia");
+                if (!IdPais)
+                    return;
+                $.ajax({
+                    type: 'GET',
+                    url: 'http://localhost:8080/api/usuario/estados/' + IdPais,
+                    dataType: 'json',
+                    success: function (data) {
+                        $.each(data.objects, function (i, estado) {
+                            $("#ddlEstado").append('<option value="' + estado.idEstado + '">' + estado.nombre + '</option>');
+                        });
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'No se pudieron cargar los estados', 'error');
+                    }
+                });
+            });
+            $("#ddlEstado").change(function () {
+                let IdEstado = $(this).val();
+                limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+                limpiarSelect("#ddlColonia", "Seleccione una colonia");
+                if (!IdEstado)
+                    return;
+                $.ajax({
+                    type: 'GET',
+                    url: 'http://localhost:8080/api/usuario/municipios/' + IdEstado,
+                    dataType: 'json',
+                    success: function (data) {
+                        $.each(data.objects, function (i, municipio) {
+                            $("#ddlMunicipio").append('<option value="' + municipio.idMunicipio + '">' + municipio.nombre + '</option>');
+                        });
+                    },
+                    error: function () {
+                        Swal.fire('Error', 'No se pudieron cargar los municipios', 'error');
+                    }
+                });
+            });
+            $("#ddlMunicipio").change(function () {
+            let IdMunicipio = $(this).val();
+                    limpiarSelect("#ddlColonia", "Seleccione una colonia");
+                    if (!IdMunicipio)
+                    return;
+                    $.ajax({
+                    type: 'GET',
+                            url: 'http://localhost:8080/api/usuario/colonias/' + IdMunicipio,
+                            dataType: 'json',
+                            success: function (data) {
+                            $.each(data.objects, function (i, colonia) {
+                            $("#ddlColonia").append('<option value="' + colonia.idColonia + '">' + colonia.nombre + '</option>');
+                            });
+                            },
+                            error: function () {
+                            Swal.fire('Error', 'No se pudieron cargar las colonias', 'error');
+                            }
+                    });
+            });
+            }
+            );
+
+        </script>
+        <script>
+            function buscarPorCP() {
+                const cp = document.getElementById("txtCP").value.trim();
+
+                if (cp.length !== 5 || !/^\d+$/.test(cp)) {
+                    alert("El código postal debe ser de 5 dígitos.");
+                    return;
+                }
+
+                fetch(`http://localhost:8080/api/usuario/codigopostal/${cp}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error("Código postal no encontrado");
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+
+                            // data.object contiene [colonia, municipio, estado, pais]
+                            const registros = data.object;
+
+                            if (!registros || registros.length === 0) {
+                                alert("No se encontró información para este código postal");
+                                return;
+                            }
+
+                            // Limpiar selects
+                            limpiarDDL("ddlPais");
+                            limpiarDDL("ddlEstado");
+                            limpiarDDL("ddlMunicipio");
+                            limpiarDDL("ddlColonia");
+
+                            // Usamos el primer registro (todos tienen referencia a los mismos municipio/estado/pais)
+                            const [ColoniaJPA, MunicipioJPA, EstadoJPA, PaisJPA] = registros[0];
+
+                            // LLENAR SELECT PAÍS
+                            agregarOpcion("ddlPais", PaisJPA.idPais, PaisJPA.nombre);
+
+                            // LLENAR SELECT ESTADO
+                            agregarOpcion("ddlEstado", EstadoJPA.idEstado, EstadoJPA.nombre);
+
+                            // LLENAR SELECT MUNICIPIO
+                            agregarOpcion("ddlMunicipio", MunicipioJPA.idMunicipio, MunicipioJPA.nombre);
+
+                            // LLENAR SELECT COLONIAS
+                            registros.forEach(reg => {
+                                const col = reg[0];
+                                agregarOpcion("ddlColonia", ColoniaJPA.idColonia, ColoniaJPA.nombre);
+                            });
+
+                            // MARCAR SELECTS AUTOMÁTICAMENTE
+                            document.getElementById("ddlPais").value = PaisJPA.idPais;
+                            document.getElementById("ddlEstado").value = EstadoJPA.idEstado;
+                            document.getElementById("ddlMunicipio").value = MunicipioJPA.idMunicipio;
+
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            alert("Error al consultar código postal.");
+                        });
+            }
+
+            // Resetea un ddl sin perder el "Selecciona" original
+            function limpiarDDL(id) {
+                const ddl = document.getElementById(id);
+                ddl.innerHTML = '<option value="0">Selecciona una opción</option>';
+            }
+
+            function agregarOpcion(id, valor, texto) {
+                const ddl = document.getElementById(id);
+                const opt = document.createElement("option");
+                opt.value = valor;
+                opt.textContent = texto;
+                ddl.appendChild(opt);
+            }
+        </script>
+
+    </body>
+</html>

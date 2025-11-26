@@ -1,0 +1,4 @@
+alondra1|Alondra|Santiago|Diaz|alondra.barajas@mail.com|12345765|1998/05/21|M|5551234567|5512345678|BADL980521HDFRZN09|1
+msaicedo|Maria|Saucedo|Gomez|maria.lopez@mail.com|abcde123|2000/08/15|F|5559876543|5519876543|LOGM000815MDFRPR01|2
+jrodriguez|Antonio|Rodriguez|Martinez|juan.rm@mail.com|pass1234|1995/01/10|M|5552223344|5512223344|ROMJ950110HDFRRT03|3
+

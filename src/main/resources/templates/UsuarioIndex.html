@@ -1,0 +1,246 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="https://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+    <head>
+        <title>Usuario Index</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {
+                margin: 0;
+                font-family: Arial, sans-serif;
+            }
+            .encabezado {
+                background: #00b5fc;
+                background: radial-gradient(circle, rgba(0, 181, 252, 1) 0%, rgba(18, 52, 64, 1) 49%, rgba(2, 10, 15, 1) 100%);
+                height: 100px;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+            .encabezado img {
+                height: 80px;
+                border-radius: 10px;
+            }
+            .agregar-btn {
+                display: flex;
+                justify-content: center;
+                margin-top: 20px;
+                margin-bottom: 40px;
+            }
+        </style>
+    </head>
+    <body layout:fragment="body" class="container-fluid p-0">
+
+        <div class="encabezado">
+            <img src="https://img.freepik.com/vector-gratis/circulo-azul-usuario-blanco_78370-4707.jpg?semt=ais_hybrid&w=740&q=80" alt="Logo usuario">
+            <h1>Bienvenido al Sistema de Usuarios</h1>
+            <div style="width: 120px;"></div>
+        </div>
+        <div class="text-center">
+            <form method="POST" th:object="${Usuario}" th:action="@{usuario}">
+                <div class="card shadow-sm p-4 mt-3 border-0 rounded-4">
+                    <h5 class="mb-4 text-primary">
+                        <i class="bi bi-person-lines-fill me-2"></i>Datos del Usuario
+                    </h5>
+
+                    <div class="row g-4">
+
+                        <!-- Nombre -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person"></i> Nombre
+                            </label>
+                            <input type="text" class="form-control shadow-sm" id="nombre"
+                                   placeholder="Nombre"
+                                   th:field="*{nombre}">
+                        </div>
+
+                        <!-- Apellido Paterno -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-badge"></i> Apellido Paterno
+                            </label>
+                            <input type="text" class="form-control shadow-sm" id="apellidopaterno"
+                                   placeholder="Apellido Paterno"
+                                   th:field="*{ApellidoPat}">
+                        </div>
+
+                        <!-- Apellido Materno -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-badge-fill"></i> Apellido Materno
+                            </label>
+                            <input type="text" class="form-control shadow-sm" id="apellidomaterno"
+                                   placeholder="Apellido Materno"
+                                   th:field="*{ApellidoMat}">
+                        </div>
+
+                        <!-- Rol -->
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-shield-lock"></i> Rol
+                            </label>
+                            <select class="form-select shadow-sm" id="rolUsuario"
+                                    th:field="*{RolJPA.IdRol}"
+                                    th:classappend="${#fields.hasErrors('RolJPA.IdRol')} ? 'is-invalid' : ''" >
+                                <option value="0">Selecciona un Rol</option>
+                                <option th:each="RolJPA : ${roles}"
+                                        th:value="${RolJPA.IdRol}"
+                                        th:text="${RolJPA.Nombre}">
+                                </option>
+                            </select>
+                            <span class="text-danger small" th:errors="*{RolJPA.IdRol}"></span>
+                        </div>
+
+                        <!-- Botón -->
+                        <div class="col-md-12  mt-3">
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                <i class="bi bi-search"></i> Buscar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="agregar-btn">
+            <a th:href="@{usuario/add}" class="btn btn-success btn-lg" >
+                <i class="bi bi-person-plus"></i> Agregar
+            </a>
+            <a th:href="@{usuario/carga}" class="btn btn-primary btn-lg" >
+                <i class="bi bi-person-plus"></i> Carga Masiva
+            </a>
+
+        </div>
+
+        <div class="container">
+            <div class="table-responsive">
+                <table class="table table-primary table-hover align-middle text-center table-sm small">
+                    <thead>
+                        <tr>
+                            <th scope="col">User Name</th>
+                            <th scope="col">Datos de Usuario</th>
+                            <th scope="col">Contacto</th>
+                            <th scope="col">Dirección (Direcciones)</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Opciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="usuario : ${usuarios}">
+                            <td>
+                                <strong><i class="bi bi-person-circle"></i> User Name:</strong> 
+                                <span th:text="${usuario.userName}"></span>  <br>
+                                <div class="position-relative d-inline-block">
+                                    <!-- Imagen actual -->
+                                    <img th:if="${usuario.imagen != null}"
+                                         th:src="'data:image/*;base64,' + ${usuario.imagen}"
+                                         alt="Imagen de usuario"
+                                         class="imagen-usuario rounded-circle"
+                                         width="100" height="100"/>
+
+                                    <!-- Imagen por defecto -->
+                                    <img th:if="${usuario.imagen == null}"
+                                         src="https://cdn-icons-png.flaticon.com/512/3177/3177440.png"
+                                         alt="Imagen por defecto"
+                                         class="imagen-usuario rounded-circle"
+                                         width="100" height="100"/>
+                            </td>
+                            <td>
+                                <strong><i class="bi bi-person"></i> Nombre:</strong> 
+                                <span th:text="|${usuario.Nombre} ${usuario.apellidoPat} ${usuario.apellidoMat}|"></span><br>
+                                <strong><i class="bi bi-gender-ambiguous"></i> Sexo:</strong> 
+                                <span th:text="${usuario.sexo}"></span><br>
+                                <strong><i class="bi bi-credit-card-2-front"></i> CURP:</strong> 
+                                <span th:text="${usuario.curp}"></span><br>
+                                <strong><i class="bi bi-calendar-icon"></i> FechaNacimiento:</strong> 
+                                <span th:text="${#dates.format(usuario.fechaNacimiento, 'dd/MM/yyyy')}"></span><br>
+                                <strong><i class="bi bi-credit-card-2-front"></i> ROL:</strong> 
+                                <span th:text="${usuario.RolJPA.Nombre}"></span><br>
+                            </td>
+                            <td>
+                                <strong><i class="bi bi-envelope"></i> Email:</strong> <span th:text="${usuario.email}"></span> <br>
+                                <strong><i class="bi bi-telephone"></i> Teléfono:</strong> <span th:text="${usuario.telefono}"></span> <br>
+                                <strong><i class="bi bi-phone"></i> Celular:</strong> <span th:text="${usuario.celular}"></span> <br>
+                            </td>
+                            <td>
+                                <ul th:each="direccion : ${usuario.direccionesJPA}">
+                                    <strong><i class="bi bi-geo-alt-fill"></i> Dirección</strong> <br>
+                                    <strong>Calle:</strong> <span th:text="${direccion.calle}"></span> <br>
+                                    <strong>Numero Int:</strong> <span th:text="${direccion.numeroInterior}"></span>  <br>
+                                    <strong>Numero Ext:</strong> <span th:text="${direccion.numeroExterior}"></span>  <br>
+                                </ul>
+                            </td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           th:data-id="${usuario.idUsuario}"
+                                           th:checked="${usuario.status == 1}"
+                                           th:onchange="|toggleStatus(${usuario.idUsuario}, this.checked)|">
+                                </div>
+                            </td>
+                            <td>
+                                <a th:href="@{/usuario/detail/{id}(id=${usuario.idUsuario})}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-person-plus"></i> Ver
+                                </a>
+
+                                <form th:action="@{/usuario/delete}" method="post" th:id="'formEliminar_' + ${usuario.idUsuario}" style="display:inline;">
+                                    <input type="hidden" name="idUsuario" th:value="${usuario.idUsuario}" />
+                                    <button type="button" class="btn btn-danger btn-sm" 
+                                            th:onclick="'confirmarEliminacion(' + ${usuario.idUsuario} + ')'">
+                                        <i class="bi bi-trash3"></i> Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <script>
+            function confirmarEliminacion(idUsuario) {
+                Swal.fire({
+                    title: '¿Está seguro?',
+                    text: "¡No podrás revertir esto!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Enviar el formulario correspondiente
+                        document.getElementById('formEliminar_' + idUsuario).submit();
+                    }
+                });
+            }
+        </script>
+        <script>
+            function toggleStatus(idUsuario, isChecked) {
+                const newStatus = isChecked ? 1 : 0;
+                fetch(`http://localhost:8080/api/usuario/update-status/${idUsuario}/${newStatus}`, {// <-- corregido
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log("Respuesta del servidor:", data);
+                            if (!data.correct) {
+                                alert("Error: " + data.errorMessage);
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error en fetch:", error);
+                            alert("No se pudo actualizar el status");
+                        });
+            }
+        </script>
+    </body>
+</html>

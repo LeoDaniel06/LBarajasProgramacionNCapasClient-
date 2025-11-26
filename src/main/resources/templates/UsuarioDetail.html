@@ -1,0 +1,627 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="https://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Detalle de Usuario</title>
+        <style>
+            body {
+                background: radial-gradient(circle, rgba(0,181,252,1) 0%, rgba(18,52,64,1) 49%, rgba(2,10,15,1) 100%);
+                color: #fff;
+                font-family: Arial, sans-serif;
+                min-height: 100vh;
+                margin: 0;
+            }
+            .encabezado {
+                background: rgba(0,0,0,0.4);
+                padding: 30px 0;
+                text-align: center;
+                font-weight: bold;
+                font-size: 2rem;
+            }
+            .contenido {
+                background: #fff;
+                color: #000;
+                border-radius: 15px;
+                max-width: 900px;
+                margin: 40px auto;
+                padding: 40px;
+                box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            }
+            .imagen-usuario {
+                width: 200px;
+                height: 200px;
+                object-fit: cover;
+                border-radius: 50%;
+                border: 3px solid #0d6efd;
+            }
+            .titulo-seccion {
+                text-align: center;
+                color: #0d6efd;
+                font-weight: bold;
+                margin-top: 40px;
+                margin-bottom: 20px;
+                font-size: 1.5rem;
+            }
+            .dato-label {
+                font-weight: bold;
+                color: #0d6efd;
+            }
+            .dato-valor {
+                display: block;
+                font-size: 1rem;
+                color: #333;
+                margin-bottom: 10px;
+            }
+            .btn-regresar {
+                display: flex;
+                justify-content: center;
+                margin-top: 40px;
+            }
+            .imagen-usuario {
+                object-fit: cover;
+                border: 3px solid #ddd;
+                transition: 0.3s ease;
+            }
+
+            .imagen-usuario:hover {
+                opacity: 0.8;
+            }
+
+            /* Contenedor del icono de cámara */
+            .icono-camara {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                background-color: #0d6efd; /* azul Bootstrap */
+                color: white;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                border: 2px solid white;
+                transition: 0.3s ease;
+            }
+
+            /* Efecto hover del ícono */
+            .icono-camara:hover {
+                background-color: #0b5ed7;
+                transform: scale(1.1);
+            }
+        </style>
+    </head>
+    <body layout:fragment="body">
+        <div class="encabezado">Datos de Usuario</div>
+
+        <div class="contenido">
+            <!-- Sección de usuario -->
+            <div class="row align-items-center mb-4">
+                <div class="col-md-12 text-center">
+                    <!-- Formulario para actualizar la imagen -->
+                    <form th:action="@{/usuario/update-imagen}" 
+                          method="post" 
+                          enctype="multipart/form-data">
+
+                        <input type="hidden" name="idUsuario" th:value="${usuario.idUsuario}" />
+                        <input type="file" id="inputFoto" name="imagen" accept="image/*" hidden onchange="this.form.submit()">
+
+                        <div class="position-relative d-inline-block">
+                            <!-- Imagen actual -->
+                            <img th:if="${usuario.imagen != null}"
+                                 th:src="'data:image/*;base64,' + ${usuario.imagen}"
+                                 alt="Imagen de usuario"
+                                 class="imagen-usuario rounded-circle"
+                                 width="150" height="150"/>
+
+                            <!-- Imagen por defecto -->
+                            <img th:if="${usuario.imagen == null}"
+                                 src="https://cdn-icons-png.flaticon.com/512/3177/3177440.png"
+                                 alt="Imagen por defecto"
+                                 class="imagen-usuario rounded-circle"
+                                 width="150" height="150"/>
+
+                            <!-- Input de tipo file oculto -->
+                            <input type="file" id="inputFoto" name="imagen" accept="image/*" hidden onchange="this.form.submit()">
+
+                            <!-- Ícono de cámara -->
+                            <div class="icono-camara" onclick="document.getElementById('inputFoto').click()">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                        </div>
+                    </form>
+
+                    <br>
+                    <button id="EditarDatos" type="button" class="btn btn-info btn-lg mt-3">Editar Datos</button>
+                </div>
+
+                <!-- Formulario oculto de editar datos -->
+                <div id="EditandoDatos" style="display: none;">
+                    <form method="post" action="/usuario/update" id="formUsuario">
+                        <input type="hidden" th:field="*{usuario.idUsuario}" />
+                        <div class="row g-4 text-center">
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-person"></i> Nombre</label>
+                                <input type="text" th:field="*{usuario.Nombre}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-person"></i> Apellido Paterno</label>
+                                <input type="text" th:field="*{usuario.ApellidoPat}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-person"></i> Apellido Materno</label>
+                                <input type="text" th:field="*{usuario.ApellidoMat}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-person"></i> Fecha de Nacimiento</label>
+                                <input type="date" th:field="*{usuario.FechaNacimiento}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-credit-card-2-front"></i> CURP</label>
+                                <input type="text" th:field="*{usuario.Curp}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-gender-ambiguous"></i> Sexo</label>
+                                <input type="text" th:field="*{usuario.Sexo}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-person"></i> UserName</label>
+                                <input type="text" th:field="*{usuario.UserName}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-telephone"></i> Teléfono</label>
+                                <input type="text" th:field="*{usuario.Telefono}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-phone"></i> Celular</label>
+                                <input type="text" th:field="*{usuario.Celular}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-envelope"></i> Email</label>
+                                <input type="text" th:field="*{usuario.Email}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-envelope"></i> Password</label>
+                                <input type="text" th:field="*{usuario.Password}" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label"><i class="bi bi-person-badge"></i> Rol</label>
+                                <select th:field="*{usuario.RolJPA.IdRol}" class="form-select">
+                                    <option value="0">Selecciona un Rol</option>
+                                    <option th:each="RolJPA : ${roles}" th:value="${RolJPA.IdRol}" th:text="${RolJPA.Nombre}"></option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Mostrar datos del usuario -->
+                <div class="titulo-seccion">Datos Personales</div>
+                <div class="col-md-12 text-center">
+                    <label class="dato-label"><i class="bi bi-person"></i> Nombre</label>
+                    <span th:text="*{usuario.Nombre}"></span>
+
+                    <label class="dato-label"><i class="bi bi-person"></i> Apellido Paterno</label>
+                    <span th:text="*{usuario.ApellidoPat}"></span>
+
+                    <label class="dato-label"><i class="bi bi-person"></i> Apellido Materno</label>
+                    <span th:text="*{usuario.ApellidoMat}"></span><br>
+
+                    <label class="dato-label"><i class="bi bi-credit-card-2-front"></i>Fecha de Nacimiento</label>
+                    <span th:text="*{usuario.FechaNacimiento}"></span>
+                    <label class="dato-label"><i class="bi bi-credit-card-2-front"></i>CURP</label>
+                    <span th:text="*{usuario.Curp}"></span>
+
+                    <label class="dato-label"><i class="bi bi-gender-ambiguous"></i>Sexo</label>
+                    <span th:text="*{usuario.Sexo}"></span><br>
+
+                    <label class="dato-label"><i class="bi bi-person-badge"></i>Rol</label>
+                    <span th:text="*{usuario.RolJPA.Nombre}"></span>
+
+                    <label class="dato-label"><i class="bi bi-person-circle"></i>User Name</label>
+                    <span th:text="*{usuario.UserName}"></span>
+                </div>
+            </div>
+
+            <!-- Datos de contacto -->
+            <div class="titulo-seccion">Datos de Contacto</div>
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="dato-label"><i class="bi bi-telephone"></i> Teléfono</label>
+                    <span th:text="*{usuario.Telefono}"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="dato-label"><i class="bi bi-phone"></i> Celular</label>
+                    <span th:text="*{usuario.Celular}"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="dato-label"><i class="bi bi-envelope"></i> Email</label>
+                    <span th:text="*{usuario.Email}"></span>
+                </div>
+            </div>
+
+            <!-- Direcciones -->
+            <div class="titulo-seccion">Direcciones</div>
+
+            <div class="col-md-12 text-center mt-3 mb-3">
+                <button type="button" class="btn btn-success btn-sm" id="btnAgregarDireccion" data-bs-toggle="modal" data-bs-target="#modalAgregarDireccion">
+                    Agregar Dirección
+                </button>
+            </div>
+
+            <div th:each="direccion : *{usuario.DireccionesJPA}" class="row mb-4">
+                <div class="col-md-3">
+                    <label class="dato-label"><i class="bi bi-house-door"></i> Calle</label>
+                    <span th:text="${direccion.Calle}"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="dato-label"><i class="bi bi-door-open"></i> Número Interior</label>
+                    <span th:text="${direccion.NumeroInterior}"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="dato-label"><i class="bi bi-door-closed"></i> Número Exterior</label>
+                    <span th:text="${direccion.NumeroExterior}"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="dato-label"><i class="bi bi-geo"></i> Colonia</label>
+                    <span th:text="${direccion.ColoniaJPA.Nombre}"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="dato-label"><i class="bi bi-building"></i> Municipio</label>
+                    <span th:text="${direccion.ColoniaJPA.MunicipioJPA.Nombre}"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="dato-label"><i class="bi bi-map"></i> Estado</label>
+                    <span th:text="${direccion.ColoniaJPA.MunicipioJPA.EstadoJPA.Nombre}"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="dato-label"><i class="bi bi-globe-americas"></i> País</label>
+                    <span th:text="${direccion.ColoniaJPA.MunicipioJPA.EstadoJPA.paisJPA.Nombre}"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="dato-label"><i class="bi bi-geo-alt"></i> Código Postal</label>
+                    <span th:text="${direccion.ColoniaJPA.CodigoPostal}"></span>
+                </div>
+                <!--boton de editar direccion-->
+                <div class="col-md-12 text-center mt-3">
+                    <button type="button" class="btn btn-primary btnEditarDireccion"
+                            th:data-id="${direccion.idDireccion}" 
+                            data-calle="${direccion.calle}"
+                            data-numerointerior="${direccion.numeroInterior}"
+                            data-numeroexterior="${direccion.numeroExterior}"
+                            data-paisid="${direccion.colonia.municipio.estado.pais.idPais}"
+                            data-estadoid="${direccion.colonia.municipio.estado.idEstado}"
+                            data-municipioid="${direccion.colonia.municipio.idMunicipio}"
+                            data-coloniaid="${direccion.colonia.idColonia}"
+                            data-bs-toggle="modal" data-bs-target="#modalAgregarDireccion">
+                        Editar
+                    </button>
+                    <button type="button"
+                            class="btn btn-danger btn-sm btnEliminarDireccion"
+                            th:data-idDireccion="${direccion.idDireccion}"
+                            th:data-idUsuario="${usuario.idUsuario}"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalConfirmDelete">
+                        Eliminar dirección
+                    </button>
+
+                </div>
+            </div>
+
+            <!--modal eliminar direccion-->
+            <div class="modal fade" id="modalConfirmDelete" tabindex="-1" aria-labelledby="modalConfirmDeleteLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow-lg rounded-4">
+                        <div class="modal-header bg-danger text-white rounded-top-4">
+                            <h5 class="modal-title" id="modalConfirmDeleteLabel">Confirmar eliminación</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+
+                        <div class="modal-body text-center">
+                            <p class="fs-5 mb-0">¿Estás seguro de que deseas eliminar esta dirección?</p>
+                        </div>
+
+                        <div class="modal-footer border-0 d-flex justify-content-center gap-2 pb-4">
+                            <!-- eliminar direccion -->
+                            <form id="formDeleteDireccion"
+                                  th:action="@{/usuario/direccion/delete/{idUsuario}(idUsuario=${usuario.idUsuario})}"
+                                  method="post">
+                                <!--Campo oculto para el IdDireccion -->
+                                <input type="hidden" name="idDireccion" id="modalIdDireccion">
+                                <button type="submit" class="btn btn-danger px-4">Aceptar</button>
+                            </form>
+                            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal para agregar/editar dirección -->
+            <div class="modal fade" id="modalAgregarDireccion" tabindex="-1" aria-labelledby="modalAgregarDireccionLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title" id="modalAgregarDireccionLabel">Agregar / Editar Dirección</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="post" id="formAgregarDireccion" class="row g-3" th:action="@{/usuario/direccion/update/{idUsuario}(idUsuario = ${usuario.IdUsuario})}" th:object="${direccion}">
+                                <input type="hidden" id="idDireccion" name="idDireccion" >
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="bi bi-house-door"></i> Calle</label>
+                                    <input type="text" id="calle" class="form-control" name="calle" 
+                                           placeholder="Ej. Reforma" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="bi bi-door-open"></i> Número Interior</label>
+                                    <input type="text" id="numeroInterior" class="form-control" name="numeroInterior" 
+                                           placeholder="Ej. 2B">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="bi bi-door-closed"></i> Número Exterior</label>
+                                    <input type="text" id="numeroExterior" class="form-control" name="numeroExterior" 
+                                           placeholder="Ej. 145">
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-globe-americas"></i> País</label>
+                                    <select id="ddlPais" name="colonia.municipio.estado.pais.idPais" class="form-select" required>
+                                        <option value="">Seleccione un país</option>
+                                        <option th:each="PaisJPA : ${paises}" 
+                                                th:value="${PaisJPA.idPais}" 
+                                                th:text="${PaisJPA.nombre}" 
+                                                th:selected="${direccion != null} ? (direccion.ColoniaJPA.MunicipioJPA.EstadoJPA.PaisJPA.idPais == PaisJPA.idPais) : false">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-map"></i> Estado</label>
+                                    <select id="ddlEstado" name="colonia.municipio.estado.idEstado" class="form-select" required>
+                                        <option value="">Seleccione un estado</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-building"></i> Municipio</label>
+                                    <select id="ddlMunicipio" name="colonia.municipio.idMunicipio" class="form-select" required>
+                                        <option value="">Seleccione un municipio</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-geo"></i> Colonia</label>
+                                    <select id="ddlColonia" name="ColoniaJPA.idColonia" class="form-select" required>
+                                        <option value="">Seleccione una colonia</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 text-center mt-3">
+                                    <button type="submit" class="btn btn-success" id="btnGuardarDireccion">
+                                        <i class="bi bi-save"></i> Guardar Dirección
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--fin de modal-->
+
+            <div class="btn-regresar">
+                <a th:href="@{/usuario}" class="btn btn-secondary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Regresar
+                </a>
+            </div>
+        </div>
+        <!--fin de seccion de datos-->
+        <!--script de boton de editar datos-->
+        <script>
+            $(document).ready(function () {
+            $("#EditarDatos").click(function () {
+            var text = $(this).text();
+            var form = $("#formUsuario");
+            if (text === "Editar Datos") {
+            $(this).text("Guardar Datos");
+            $("#EditandoDatos").slideToggle();
+            } else {
+            form.submit();
+            }
+            });
+            });
+        </script>
+        <!--script de alerta--> 
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            let mensaje = [[${mensajeExito
+            }
+            ]];
+            if (mensaje != null && mensaje != '') {
+            Swal.fire({
+            icon: 'success',
+                    title: 'Actualización exitosa',
+                    text: mensaje,
+                    confirmButtonText: 'Aceptar'
+            });
+            }
+            /*]]>*/
+        </script>
+        <!--Script ddls-->
+        <script>
+            $(document).ready(function () {
+            function limpiarSelect(selectId, texto) {
+            $(selectId).empty().append('<option value="" selected>' + texto + '</option>');
+            }
+
+            $('#modalAgregarDireccion').on('show.bs.modal', function () {
+            limpiarSelect("#ddlEstado", "Seleccione un estado");
+            limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+            limpiarSelect("#ddlColonia", "Seleccione una colonia");
+            });
+            $("#ddlPais").change(function () {
+            let IdPais = $(this).val();
+            limpiarSelect("#ddlEstado", "Seleccione un estado");
+            limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+            limpiarSelect("#ddlColonia", "Seleccione una colonia");
+            if (!IdPais)
+                    return;
+            $.ajax({
+            type: 'GET',
+                    url: 'http://localhost:8080/api/usuario/estados/' + IdPais,
+                    dataType: 'json',
+                    success: function (data) {
+                    $.each(data.objects, function (i, estado) {
+                    $("#ddlEstado").append('<option value="' + estado.idEstado + '">' + estado.nombre + '</option>');
+                    });
+                    },
+                    error: function () {
+                    Swal.fire('Error', 'No se pudieron cargar los estados', 'error');
+                    }
+            });
+            });
+            $("#ddlEstado").change(function () {
+            let IdEstado = $(this).val();
+            limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+            limpiarSelect("#ddlColonia", "Seleccione una colonia");
+            if (!IdEstado)
+                    return;
+            $.ajax({
+            type: 'GET',
+                    url: 'http://localhost:8080/api/usuario/municipios/' + IdEstado,
+                    dataType: 'json',
+                    success: function (data) {
+                    $.each(data.objects, function (i, MunicipioJPA) {
+                    $("#ddlMunicipio").append('<option value="' + MunicipioJPA.idMunicipio + '">' + MunicipioJPA.nombre + '</option>');
+                    });
+                    },
+                    error: function () {
+                    Swal.fire('Error', 'No se pudieron cargar los municipios', 'error');
+                    }
+            });
+            });
+            $("#ddlMunicipio").change(function () {
+            let IdMunicipio = $(this).val();
+            limpiarSelect("#ddlColonia", "Seleccione una colonia");
+            if (!IdMunicipio)
+                    return;
+            $.ajax({
+            type: 'GET',
+                    url: 'http://localhost:8080/api/usuario/colonias/' + IdMunicipio,
+                    dataType: 'json',
+                    success: function (data) {
+                    $.each(data.objects, function (i, ColoniaJPA) {
+                    $("#ddlColonia").append('<option value="' + ColoniaJPA.idColonia + '">' + ColoniaJPA.nombre + '</option>');
+                    });
+                    },
+                    error: function () {
+                    Swal.fire('Error', 'No se pudieron cargar las colonias', 'error');
+                    }
+            });
+            });
+            });
+        </script>
+        <!--script para editar y agregar direccion-->
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+
+            function RellenaDireccion(idDireccion) {
+            $.ajax({
+            url: "http://localhost:8080/api/usuario/direccion/" + idDireccion,
+                    type: 'GET',
+                    success: function (data) {
+
+                    var direccion = data.object;
+                    // LLENAR CAMPOS BÁSICOS
+                    $("#idDireccion").val(direccion.idDireccion);
+                    $("#calle").val(direccion.calle);
+                    $("#numeroInterior").val(direccion.numeroInterior);
+                    $("#numeroExterior").val(direccion.numeroExterior);
+                    // --- OBTENER IDs REALES DEL JSON ---
+                    var idPais = direccion.ColoniaJPA.MunicipioJPA.EstadoJPA.PaisJPA.idPais;
+                    var idEstado = direccion.ColoniaJPA.MunicipioJPA.EstadoJPA.idEstado;
+                    var idMunicipio = direccion.ColoniaJPA.MunicipioJPA.idMunicipio;
+                    var idColonia = direccion.ColoniaJPA.idColonia;
+                    // Seleccionar país
+                    $("#ddlPais").val(idPais);
+                    // CARGAR ESTADOS
+                    $.ajax({
+                    url: "http://localhost:8080/api/usuario/estados/" + idPais,
+                            type: "GET",
+                            success: function (resEstados) {
+
+                            var ddlEstado = $("#ddlEstado");
+                            ddlEstado.empty().append('<option value="">Seleccione un estado</option>');
+                            resEstados.objects.forEach(function (estado) {
+                            ddlEstado.append('<option value="' + estado.idEstado + '">' + estado.nombre + '</option>');
+                            });
+                            ddlEstado.val(idEstado);
+                            // CARGAR MUNICIPIOS
+                            $.ajax({
+                            url: "http://localhost:8080/api/usuario/municipios/" + idEstado,
+                                    type: "GET",
+                                    success: function (resMunicipios) {
+
+                                    var ddlMunicipio = $("#ddlMunicipio");
+                                    ddlMunicipio.empty().append('<option value="">Seleccione un municipio</option>');
+                                    resMunicipios.objects.forEach(function (municipio) {
+                                    ddlMunicipio.append('<option value="' + municipio.idMunicipio + '">' + municipio.nombre + '</option>');
+                                    });
+                                    ddlMunicipio.val(idMunicipio);
+                                    // CARGAR COLONIAS
+                                    $.ajax({
+                                    url: "http://localhost:8080/api/usuario/colonias/" + idMunicipio,
+                                            type: "GET",
+                                            success: function (resColonias) {
+
+                                            var ddlColonia = $("#ddlColonia");
+                                            ddlColonia.empty().append('<option value="">Seleccione una colonia</option>');
+                                            resColonias.objects.forEach(function (col) {
+                                            ddlColonia.append('<option value="' + col.idColonia + '">' + col.nombre + '</option>');
+                                            });
+                                            ddlColonia.val(idColonia);
+                                            }
+                                    });
+                                    }
+                            });
+                            }
+                    });
+                    },
+                    error: function () {
+                    console.log("Error al cargar la dirección");
+                    }
+            });
+            }
+
+
+            document.addEventListener("DOMContentLoaded", function () {
+
+            const idUsuario = [[${usuario.idUsuario}]];
+            function limpiarModalDireccion() {
+            $("#idDireccion").val("");
+            $("#calle").val("");
+            $("#numeroInterior").val("");
+            $("#numeroExterior").val("");
+            $("#ddlPais").val("").trigger("change");
+            $("#ddlEstado").html('<option value="">Seleccione un estado</option>');
+            $("#ddlMunicipio").html('<option value="">Seleccione un municipio</option>');
+            $("#ddlColonia").html('<option value="">Seleccione una colonia</option>');
+            }
+
+            // BOTÓN AGREGAR DIRECCIÓN
+            $("#btnAgregarDireccion").on("click", function () {
+            limpiarModalDireccion();
+            $("#modalAgregarDireccionLabel").text("Agregar Nueva Dirección");
+            $("#formAgregarDireccion").attr("action", "/usuario/direccion/add/" + idUsuario);
+            });
+            // BOTÓN EDITAR DIRECCIÓN
+            $(".btnEditarDireccion").on("click", function () {
+            $("#modalAgregarDireccionLabel").text("Editar Dirección");
+            var idDireccion = $(this).data("id");
+            $("#formAgregarDireccion").attr("action", "/usuario/direccion/update/" + idUsuario);
+            RellenaDireccion(idDireccion);
+            });
+            });
+            /*]]>*/
+        </script>
+    </body>
+</html>

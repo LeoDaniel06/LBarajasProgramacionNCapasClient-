@@ -1,0 +1,10 @@
+acastillo|Andrea|Castillo|Ramirez|andreacastillo@mail.com|andrea123|1999/03/12|F|5531147820|5523354411|CARA990312MDFRND04|2
+dtorres|Diego|Torres|Lopez|diegotorres@mail.com|dtorres99|1997/07/25|M|5587712234|5519982234|TOLD970725HDFRPS09|3
+shernandez|Sofia|Hernandez|Mora|sofiahm@mail.com|sofipass|2001/11/03|F|5598834455|5580012233|HERM011103MDFRNS08|1
+rgarcia|Ruben|Garcia|Perez|rubengp@mail.com|rubenpass|1995/04/30|M|5574125632|5544125632|GAPR950430HDFRZN02|2
+lmendoza|Lucia|Mendoza|Cruz|luciamendoza@mail.com|luciaMC22|2002/06/14|F|5567129087|5512213344|MECL020614MDFRLC05|1
+ecampos|Ernesto|Campos|Martinez|ernestocampos@mail.com|ernestito|1998/09/21|M|5541123366|5568897700|CAME980921HDFRRT07|3
+jflores|Julieta|Flores|Delgado|julietaflores@mail.com|julifd123|2000/12/19|F|5539874412|5523341189|FODJ001219MDFRLT06|2
+pnavarro|Pablo|Navarro|Jimenez|pablonj@mail.com|pabloNJ1|1996/02/08|M|5567412235|5548712235|NAJP960208HDFRLB09|1
+mrios|Mariana|Rios|Vega|marianarios@mail.com|mrios2000|2000/09/17|F|5580012233|5567712211|RIVM000917MDFRNS05|3
+hfernandez|Hector|Fernandez|Ruiz|hectorfr@mail.com|hfpass123|1994/10/05|M|5571123344|5517789923|FERH941005HDFRNS01|2

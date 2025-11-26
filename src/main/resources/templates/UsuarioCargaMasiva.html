@@ -1,0 +1,159 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="https://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+    <head>
+        <title>Carga Masiva de Usuarios</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <style>
+            body {
+                margin: 0;
+                font-family: Arial, sans-serif;
+            }
+            .encabezado {
+                background: radial-gradient(circle, rgba(0,181,252,1) 0%, rgba(18,52,64,1) 49%, rgba(2,10,15,1) 100%);
+                height: 100px;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+            .encabezado img {
+                height: 80px;
+                border-radius: 10px;
+                margin-right: 20px;
+            }
+            .btn-carga, .agregar-btn {
+                display: flex;
+                justify-content: center;
+                margin: 20px 0;
+            }
+            table {
+                width: 95%;
+                margin: 20px auto;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: center;
+            }
+            th {
+                background-color: #007bff;
+                color: white;
+            }
+            .alert {
+                width: 80%;
+                margin: 20px auto;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body layout:fragment="body" class="container-fluid p-0">
+        <div class="encabezado">
+            <img src="https://img.freepik.com/vector-gratis/circulo-azul-usuario-blanco_78370-4707.jpg" alt="Logo usuario">
+            <h1>Carga Masiva de Usuarios</h1>
+        </div>
+
+        <!-- Mensajes -->
+        <div th:if="${mensajeError}" class="alert alert-danger" th:text="${mensajeError}"></div>
+        <div th:if="${mensajeExito}" class="alert alert-success" th:text="${mensajeExito}"></div>
+
+        <!-- Formulario de carga -->
+        <div class="btn-carga">
+            <button id="GenerarCarga" type="button" class="btn btn-info" onclick="mostrarFormulario()">Generar Carga</button>
+        </div>
+
+        <div class="agregar-btn" id="OpcionesCarga" style="display:none">
+            <button class="btn btn-success btn-lg" id="btnTxt">TXT</button>
+            <button class="btn btn-primary btn-lg" id="btnExcel">XLSX</button>
+        </div>
+
+        <div class="tipo-archivo text-center" id="insertararchivo" style="display:none">
+            <form th:action="@{/usuario/carga}" method="post" enctype="multipart/form-data">
+                <label class="form-label">Seleccione un archivo</label>
+                <input type="file" id="documentfile" name="archivo" accept=".xlsx,.txt">
+                <button type="submit" class="btn btn-success" id="cargaMasiva">Subir Archivo</button>
+            </form>
+        </div>
+
+        <!-- Tabla de errores -->
+        <div th:if="${errores}" class="container mt-4">
+            <h4 class="text-danger text-center">Errores encontrados</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Línea</th>
+                        <th>Campo</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="error : ${errores}">
+                        <td th:text="${error.linea}"></td>
+                        <td th:text="${error.campo}"></td>
+                        <td th:text="${error.descripcion}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tabla de usuarios validados -->
+        <div th:if="${usuarios}" class="container mt-4">
+            <h4 class="text-success text-center">Usuarios cargados correctamente</h4>
+            <form th:action="@{/usuario/procesar}" method="post">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Nombre</th>
+                            <th>Apellido Paterno</th>
+                            <th>Apellido Materno</th>
+                            <th>Email</th>
+                            <th>Sexo</th>
+                            <th>Teléfono</th>
+                            <th>CURP</th>
+                            <th>Rol</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="usuario : ${usuarios}">
+                            <td th:text="${usuario.userName}"></td>
+                            <td th:text="${usuario.nombreUsuario}"></td>
+                            <td th:text="${usuario.apellidoPat}"></td>
+                            <td th:text="${usuario.apellidoMat}"></td>
+                            <td th:text="${usuario.email}"></td>
+                            <td th:text="${usuario.sexo}"></td>
+                            <td th:text="${usuario.telefono}"></td>
+                            <td th:text="${usuario.curp}"></td>
+                            <td th:text="${usuario.rol.idRol}"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="text-center mt-3">
+                    <button type="submit" class="btn btn-success btn-lg">Procesar Usuarios</button>
+                </div>
+            </form>
+        </div>
+
+        <script>
+            function mostrarFormulario() {
+                document.getElementById("OpcionesCarga").style.display = "flex";
+                document.getElementById("GenerarCarga").style.display = "none";
+            }
+
+            document.getElementById("btnExcel").addEventListener("click", function () {
+                document.getElementById("insertararchivo").style.display = "block";
+                document.getElementById("documentfile").setAttribute("accept", ".xlsx");
+            });
+
+            document.getElementById("btnTxt").addEventListener("click", function () {
+                document.getElementById("insertararchivo").style.display = "block";
+                document.getElementById("documentfile").setAttribute("accept", ".txt");
+            });
+        </script>
+    </body>
+</html>
