@@ -1,0 +1,102 @@
+<html xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>Login</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <!-- Bootstrap 5 -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+        <style>
+            body {
+                background: linear-gradient(135deg, #1e3c72, #2a5298);
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-family: Arial, sans-serif;
+            }
+
+            .login-card {
+                width: 360px;
+                padding: 30px;
+                border-radius: 12px;
+                background: #ffffff;
+                box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+                animation: fadeIn 0.6s ease-in-out;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }
+                to   {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .login-title {
+                text-align: center;
+                font-weight: bold;
+                margin-bottom: 20px;
+                font-size: 1.5rem;
+                color: #1e3c72;
+            }
+
+            .btn-login {
+                width: 100%;
+                background-color: #1e3c72;
+                color: #fff;
+                font-weight: bold;
+            }
+
+            .btn-login:hover {
+                background-color: #16325c;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <div class="login-card">
+            <div class="login-title">Iniciar Sesión</div>
+
+            <form method="post" th:action="@{/usuario/login}">
+                <div class="mb-3">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" name="username" class="form-control" placeholder="Ingresa tu usuario" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" name="password" class="form-control" placeholder="Ingresa tu contraseña" required>
+                </div>
+
+                <button type="submit" class="btn btn-login mt-2">Entrar</button>
+            </form>
+
+            <!-- MENSAJE: usuario o contraseña incorrectos -->
+            <div th:if="${param.error}" class="mt-3">
+                <div class="alert alert-danger text-center">
+                    Usuario o contraseña incorrectos
+                </div>
+            </div>
+
+            <!-- MENSAJE: usuario inactivo -->
+            <div th:if="${usuarioInactivo}" class="mt-3">
+                <div class="alert alert-warning text-center">
+                    El usuario se encuentra inactivo.
+                </div>
+            </div>
+
+            <!-- MENSAJE: sesión cerrada -->
+            <div th:if="${param.logout}" class="alert alert-info text-center mt-3">
+                Sesión cerrada correctamente.
+            </div>
+
+        </div>  
+
+    </body>
+</html>

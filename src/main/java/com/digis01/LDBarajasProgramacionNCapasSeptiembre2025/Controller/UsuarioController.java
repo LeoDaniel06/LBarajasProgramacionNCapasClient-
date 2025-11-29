@@ -1,5 +1,7 @@
 package com.digis01.LDBarajasProgramacionNCapasSeptiembre2025.Controller;
 
+import com.digis01.LDBarajasProgramacionNCapasSeptiembre2025.DTO.LoginRequest;
+import com.digis01.LDBarajasProgramacionNCapasSeptiembre2025.DTO.TokenResponse;
 import com.digis01.LDBarajasProgramacionNCapasSeptiembre2025.ML.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,12 +39,15 @@ import org.springframework.validation.ObjectError;
 import jakarta.servlet.http.HttpSession;
 import java.util.stream.Collectors;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 @Controller
@@ -51,50 +56,98 @@ public class UsuarioController {
 
 //    private RestTemplate restTemplate;
     private final String URL = "http://localhost:8080/api/usuario";
+    private final String AUTH_URL = "http://localhost:8080/api/auth/login";
+//------------------------------------------------------LOGIN Y LOGOUT-----------------------------------------------------
 
-//------------------------------------------------------USUARIO INDEX-----------------------------------------------------
-    @GetMapping
-    public String Index(Model model) {
+    @GetMapping("/login")
+    public String loginPage(
+            @RequestParam(value = "error", required = false) String error,
+            @RequestParam(value = "usuarioInactivo", required = false) String usuarioInactivo,
+            @RequestParam(value = "logout", required = false) String logout,
+            Model model) {
 
-        RestTemplate restTemplate = new RestTemplate();
-
-        ResponseEntity<Result<Usuario>> responseUsuarios = restTemplate.exchange(
-                URL,
-                HttpMethod.GET,
-                HttpEntity.EMPTY,
-                new ParameterizedTypeReference<Result<Usuario>>() {
+        if (error != null) {
+            model.addAttribute("mensaje", "Usuario o contraseña incorrectos");
         }
-        );
-
-        ResponseEntity<Result<Rol>> responseRoles = restTemplate.exchange(
-                URL + "/roles",
-                HttpMethod.GET,
-                HttpEntity.EMPTY,
-                new ParameterizedTypeReference<Result<Rol>>() {
+        if (usuarioInactivo != null) {
+            model.addAttribute("mensaje", "Usuario inactivo");
         }
-        );
-        if (responseUsuarios.getStatusCode().is2xxSuccessful()) {
-            Result<Usuario> resultUsuario = responseUsuarios.getBody();
-            model.addAttribute("usuarios", resultUsuario.objects); // <--- Es una lista
-        } else {
-            model.addAttribute("usuarios", null);
+        if (logout != null) {
+            model.addAttribute("mensaje", "Sesión cerrada correctamente");
         }
-        if (responseRoles.getStatusCode().is2xxSuccessful()) {
-            Result<Rol> resultRol = responseRoles.getBody();
-            model.addAttribute("roles", resultRol.objects); // <--- También lista
-        } else {
-            model.addAttribute("roles", null);
-        }
-        model.addAttribute("Usuario", new Usuario());
-
-        return "UsuarioIndex";
+        return "UsuarioLogin";
     }
-//----------------------CARGA MASIVA--------------------------
-//
-//    @GetMapping("/carga")
-//    public String mostrarCargaMasiva(Model model) {
-//        return "UsuarioCargaMasiva";
-//    }
+
+    @PostMapping("/login")
+    public String login(@ModelAttribute LoginRequest loginRequest, HttpSession session, Model model) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<LoginRequest> request = new HttpEntity<>(loginRequest, headers);
+            ResponseEntity<TokenResponse> response = restTemplate.exchange(
+                    AUTH_URL,
+                    HttpMethod.POST,
+                    request,
+                    TokenResponse.class
+            );
+            session.setAttribute("token", response.getBody().getToken());
+            return "redirect:/usuario";
+
+        } catch (Exception e) {
+            return "redirect:/login?error=true";
+        }
+    }
+
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        session.invalidate();
+        return "redirect:/login?logout=true";
+    }
+//------------------------------------------------------USUARIO INDEX-----------------------------------------------------
+
+    @GetMapping
+    public String Index(Model model, HttpSession session) {
+        String token = (String) session.getAttribute("token");
+        if (token == null) {
+            return "redirect:/login?expired=true";
+        }
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<Result<Usuario>> responseUsuarios = restTemplate.exchange(
+                    URL,
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<Result<Usuario>>() {
+            }
+            );
+            ResponseEntity<Result<Rol>> responseRoles = restTemplate.exchange(
+                    URL + "/roles",
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<Result<Rol>>() {
+            }
+            );
+            if (responseUsuarios.getStatusCode().is2xxSuccessful()) {
+                model.addAttribute("usuarios", responseUsuarios.getBody().objects);
+            } else {
+                model.addAttribute("usuarios", null);
+            }
+            if (responseRoles.getStatusCode().is2xxSuccessful()) {
+                model.addAttribute("roles", responseRoles.getBody().objects);
+            } else {
+                model.addAttribute("roles", null);
+            }
+            model.addAttribute("Usuario", new Usuario());
+            return "UsuarioIndex";
+        } catch (Exception ex) {
+            return "redirect:/login?forbidden=true";
+        }
+    }
+
 //
 //    @PostMapping("/procesar")
 //    public String procesarUsuarios(HttpSession session, Model model) {
@@ -418,50 +471,54 @@ public class UsuarioController {
 //    }
 //
 ////------------------------------------------------------USUARIODETAIL----------------------------------------------------------
-
     @GetMapping("/detail/{id}")
-    public String getUsuarioDetail(@PathVariable int id, Model model) {
-        Result result = new Result();
+    public String getUsuarioDetail(@PathVariable int id, Model model, HttpSession session) {
+        String token = (String) session.getAttribute("token");
+        if (token == null) {
+            return "redirect:/login?expired=true";
+        }
         RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
-            ResponseEntity<Result<Usuario>> responseEntityUsuario = restTemplate.exchange(
+            ResponseEntity<Result<Usuario>> responseUsuario = restTemplate.exchange(
                     URL + "/detail/" + id,
                     HttpMethod.GET,
-                    HttpEntity.EMPTY,
+                    entity,
                     new ParameterizedTypeReference<Result<Usuario>>() {
-            });
-            ResponseEntity<Result<Rol>> responseEntityRol = restTemplate.exchange(
+            }
+            );
+            ResponseEntity<Result<Rol>> responseRoles = restTemplate.exchange(
                     URL + "/roles",
                     HttpMethod.GET,
-                    HttpEntity.EMPTY,
+                    entity,
                     new ParameterizedTypeReference<Result<Rol>>() {
-            });
-            ResponseEntity<Result<Pais>> responseEntityPais = restTemplate.exchange(
+            }
+            );
+            ResponseEntity<Result<Pais>> responsePaises = restTemplate.exchange(
                     URL + "/paises",
                     HttpMethod.GET,
-                    HttpEntity.EMPTY,
+                    entity,
                     new ParameterizedTypeReference<Result<Pais>>() {
-            });
-            if (responseEntityUsuario.getStatusCode().value() == 200) {
-                Result<Usuario> resultUsuario = responseEntityUsuario.getBody();
-                model.addAttribute("usuario", resultUsuario.object);
+            }
+            );
+            if (responseUsuario.getStatusCode().is2xxSuccessful()) {
+                model.addAttribute("usuario", responseUsuario.getBody().object);
                 model.addAttribute("direccio", new Direccion());
             } else {
                 model.addAttribute("usuario", new Usuario());
             }
-            if (responseEntityRol.getStatusCode().value() == 200) {
-                model.addAttribute("roles", responseEntityRol.getBody().objects);
+            if (responseRoles.getStatusCode().is2xxSuccessful()) {
+                model.addAttribute("roles", responseRoles.getBody().objects);
             }
-            if (responseEntityPais.getStatusCode().value() == 200) {
-                model.addAttribute("paises", responseEntityPais.getBody().objects);
+            if (responsePaises.getStatusCode().is2xxSuccessful()) {
+                model.addAttribute("paises", responsePaises.getBody().objects);
             }
-            result.correct = true;
+            return "UsuarioDetail";
         } catch (Exception ex) {
-            result.correct = false;
-            result.errorMessage = ex.getLocalizedMessage();
-            result.ex = ex;
+            return "redirect:/login?forbidden=true";
         }
-        return "UsuarioDetail";
     }
 //---------------------------------------------------------USUARIOFORM-----------------------------------------------------------
 
@@ -846,15 +903,6 @@ public class UsuarioController {
         return "redirect:/usuario/detail/" + idUsuario;
     }
 ////---------------------------------------------------BUCADOR DINAMICO----------------------------------------------------
-//
-//    @PostMapping()
-//    public String BuscarUsuario(@ModelAttribute("Usuario") Usuario usuario, Model model) {
-//        Result result = usuarioJPADAOImplementation.BusquedaDinamica(usuario);
-//        model.addAttribute("usuarios", result.objects);
-//        model.addAttribute("Roles", rolJPADAOImplementation.GETALL().objects);
-//        model.addAttribute("Usuario", usuario);
-//        return "UsuarioIndex";
-//    }
 
     @PostMapping()
     public String BuscarUsuario(@ModelAttribute("Usuario") Usuario usuario, Model model) {
@@ -898,7 +946,7 @@ public class UsuarioController {
         try {
             String url = "http://localhost:8080/api/usuario/update-status/" + idUsuario + "/" + status;
             restTemplate.put(url, null);  // llama al API REST
-            
+
         } catch (Exception ex) {
             result.correct = false;
             result.errorMessage = ex.getLocalizedMessage();
@@ -906,4 +954,26 @@ public class UsuarioController {
         }
         return "redirect:/usuario";
     }
+
+//----------------------------------------CARGA MASIVA-----------------------------------------   
+//    @GetMapping("/carga")
+//    public String mostrarCargaMasiva(Model model) {
+//        return "UsuarioCargaMasiva";
+//    }
+//
+//    @PostMapping("/carga")
+//    public String CargarArchivo(@RequestParam("archivo") MultipartFile archivo, Model model) {
+//        if (archivo.isEmpty()) {
+//            model.addAttribute("Mensaje Error", "Debe seleccionar un archivo");
+//            return "UsuarioCargaMasiva";
+//        }
+//        try {
+//            HttpHeaders httpHeaders = new HttpHeaders();
+//            httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+//            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+//            ByteArrayResource
+//        } catch (Exception e) {
+//        }
+//        return "UsuarioCargaMasiva";
+//    }
 }

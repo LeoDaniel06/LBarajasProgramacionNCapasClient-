@@ -38,6 +38,9 @@
             <img src="https://img.freepik.com/vector-gratis/circulo-azul-usuario-blanco_78370-4707.jpg?semt=ais_hybrid&w=740&q=80" alt="Logo usuario">
             <h1>Bienvenido al Sistema de Usuarios</h1>
             <div style="width: 120px;"></div>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
+            </form>
         </div>
         <div class="text-center">
             <form method="POST" th:object="${Usuario}" th:action="@{usuario}">
