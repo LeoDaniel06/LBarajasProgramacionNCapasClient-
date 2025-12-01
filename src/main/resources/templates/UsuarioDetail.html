@@ -623,5 +623,18 @@
             });
             /*]]>*/
         </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+
+            document.querySelectorAll(".btnEliminarDireccion").forEach(btn => {
+            btn.addEventListener("click", function () {
+
+            const idDireccion = this.getAttribute("data-iddireccion");
+            // Colocar el id en el input hidden del modal
+            document.getElementById("modalIdDireccion").value = idDireccion;
+            });
+            });
+            });
+        </script>
     </body>
 </html>
