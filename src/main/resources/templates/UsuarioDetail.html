@@ -95,6 +95,7 @@
         </style>
     </head>
     <body layout:fragment="body">
+        <input type="hidden" id="token" th:value="${token}">
         <div class="encabezado">Datos de Usuario</div>
 
         <div class="contenido">
@@ -449,10 +450,10 @@
         <!--Script ddls-->
         <script>
             $(document).ready(function () {
+            let token = $("#token").val();
             function limpiarSelect(selectId, texto) {
             $(selectId).empty().append('<option value="" selected>' + texto + '</option>');
             }
-
             $('#modalAgregarDireccion').on('show.bs.modal', function () {
             limpiarSelect("#ddlEstado", "Seleccione un estado");
             limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
@@ -469,6 +470,9 @@
             type: 'GET',
                     url: 'http://localhost:8080/api/usuario/estados/' + IdPais,
                     dataType: 'json',
+                    headers: {
+                    "Authorization": "Bearer " + token
+                    },
                     success: function (data) {
                     $.each(data.objects, function (i, estado) {
                     $("#ddlEstado").append('<option value="' + estado.idEstado + '">' + estado.nombre + '</option>');
@@ -489,9 +493,12 @@
             type: 'GET',
                     url: 'http://localhost:8080/api/usuario/municipios/' + IdEstado,
                     dataType: 'json',
+                    headers: {
+                    "Authorization": "Bearer " + token
+                    },
                     success: function (data) {
-                    $.each(data.objects, function (i, MunicipioJPA) {
-                    $("#ddlMunicipio").append('<option value="' + MunicipioJPA.idMunicipio + '">' + MunicipioJPA.nombre + '</option>');
+                    $.each(data.objects, function (i, municipio) {
+                    $("#ddlMunicipio").append('<option value="' + municipio.idMunicipio + '">' + municipio.nombre + '</option>');
                     });
                     },
                     error: function () {
@@ -508,9 +515,12 @@
             type: 'GET',
                     url: 'http://localhost:8080/api/usuario/colonias/' + IdMunicipio,
                     dataType: 'json',
+                    headers: {
+                    "Authorization": "Bearer " + token
+                    },
                     success: function (data) {
-                    $.each(data.objects, function (i, ColoniaJPA) {
-                    $("#ddlColonia").append('<option value="' + ColoniaJPA.idColonia + '">' + ColoniaJPA.nombre + '</option>');
+                    $.each(data.objects, function (i, colonia) {
+                    $("#ddlColonia").append('<option value="' + colonia.idColonia + '">' + colonia.nombre + '</option>');
                     });
                     },
                     error: function () {
@@ -525,28 +535,36 @@
             /*<![CDATA[*/
 
             function RellenaDireccion(idDireccion) {
+
+            const token = document.getElementById("token").value;
             $.ajax({
             url: "http://localhost:8080/api/usuario/direccion/" + idDireccion,
                     type: 'GET',
+                    headers: {
+                    "Authorization": "Bearer " + token
+                    },
                     success: function (data) {
 
                     var direccion = data.object;
-                    // LLENAR CAMPOS BÁSICOS
                     $("#idDireccion").val(direccion.idDireccion);
                     $("#calle").val(direccion.calle);
                     $("#numeroInterior").val(direccion.numeroInterior);
                     $("#numeroExterior").val(direccion.numeroExterior);
-                    // --- OBTENER IDs REALES DEL JSON ---
+                    // IDs reales
                     var idPais = direccion.ColoniaJPA.MunicipioJPA.EstadoJPA.PaisJPA.idPais;
                     var idEstado = direccion.ColoniaJPA.MunicipioJPA.EstadoJPA.idEstado;
                     var idMunicipio = direccion.ColoniaJPA.MunicipioJPA.idMunicipio;
                     var idColonia = direccion.ColoniaJPA.idColonia;
-                    // Seleccionar país
                     $("#ddlPais").val(idPais);
+                    // ==============================
                     // CARGAR ESTADOS
+                    // ==============================
                     $.ajax({
                     url: "http://localhost:8080/api/usuario/estados/" + idPais,
                             type: "GET",
+                            headers: {
+                            "Authorization": "Bearer " + token
+                            },
                             success: function (resEstados) {
 
                             var ddlEstado = $("#ddlEstado");
@@ -555,10 +573,15 @@
                             ddlEstado.append('<option value="' + estado.idEstado + '">' + estado.nombre + '</option>');
                             });
                             ddlEstado.val(idEstado);
+                            // ==============================
                             // CARGAR MUNICIPIOS
+                            // ==============================
                             $.ajax({
                             url: "http://localhost:8080/api/usuario/municipios/" + idEstado,
                                     type: "GET",
+                                    headers: {
+                                    "Authorization": "Bearer " + token
+                                    },
                                     success: function (resMunicipios) {
 
                                     var ddlMunicipio = $("#ddlMunicipio");
@@ -567,10 +590,15 @@
                                     ddlMunicipio.append('<option value="' + municipio.idMunicipio + '">' + municipio.nombre + '</option>');
                                     });
                                     ddlMunicipio.val(idMunicipio);
+                                    // ==============================
                                     // CARGAR COLONIAS
+                                    // ==============================
                                     $.ajax({
                                     url: "http://localhost:8080/api/usuario/colonias/" + idMunicipio,
                                             type: "GET",
+                                            headers: {
+                                            "Authorization": "Bearer " + token
+                                            },
                                             success: function (resColonias) {
 
                                             var ddlColonia = $("#ddlColonia");
@@ -592,7 +620,6 @@
             });
             }
 
-
             document.addEventListener("DOMContentLoaded", function () {
 
             const idUsuario = [[${usuario.idUsuario}]];
@@ -607,13 +634,13 @@
             $("#ddlColonia").html('<option value="">Seleccione una colonia</option>');
             }
 
-            // BOTÓN AGREGAR DIRECCIÓN
+            // AGREGAR DIRECCIÓN
             $("#btnAgregarDireccion").on("click", function () {
             limpiarModalDireccion();
             $("#modalAgregarDireccionLabel").text("Agregar Nueva Dirección");
             $("#formAgregarDireccion").attr("action", "/usuario/direccion/add/" + idUsuario);
             });
-            // BOTÓN EDITAR DIRECCIÓN
+            // EDITAR DIRECCIÓN
             $(".btnEditarDireccion").on("click", function () {
             $("#modalAgregarDireccionLabel").text("Editar Dirección");
             var idDireccion = $(this).data("id");

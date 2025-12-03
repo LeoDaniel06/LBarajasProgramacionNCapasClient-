@@ -112,6 +112,7 @@ public class UsuarioController {
         if (token == null) {
             return "redirect:/usuario/login?expired=true";
         }
+        model.addAttribute("token", token);
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Bearer " + token);
@@ -144,7 +145,7 @@ public class UsuarioController {
             model.addAttribute("Usuario", new Usuario());
             return "UsuarioIndex";
         } catch (Exception ex) {
-            return "redirect:/login?forbidden=true";
+            return "redirect:/usuario/login?forbidden=true";
         }
     }
 
@@ -475,12 +476,13 @@ public class UsuarioController {
     public String getUsuarioDetail(@PathVariable int id, Model model, HttpSession session) {
         String token = (String) session.getAttribute("token");
         if (token == null) {
-            return "redirect:/login?expired=true";
+            return "redirect:/usuario/login?expired=true";
         }
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Bearer " + token);
         HttpEntity<String> entity = new HttpEntity<>(headers);
+        model.addAttribute("token", token);
         try {
             ResponseEntity<Result<Usuario>> responseUsuario = restTemplate.exchange(
                     URL + "/detail/" + id,
@@ -517,7 +519,7 @@ public class UsuarioController {
             }
             return "UsuarioDetail";
         } catch (Exception ex) {
-            return "redirect:/login?forbidden=true";
+            return "redirect:/usuario/login?forbidden=true";
         }
     }
 //---------------------------------------------------------USUARIOFORM-----------------------------------------------------------
@@ -528,6 +530,7 @@ public class UsuarioController {
         if (token == null) {
             return "redirect:/login?expired=true";
         }
+        model.addAttribute("token", token);
         Usuario usuario = new Usuario();
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
@@ -566,7 +569,7 @@ public class UsuarioController {
     ) {
         String token = (String) session.getAttribute("token");
         if (token == null) {
-            return "redirect:/login?expired=true";
+            return "redirect:/usuario/login?expired=true";
         }
         if (bindingResult.hasErrors()) {
             RestTemplate restTemplate = new RestTemplate();
@@ -724,7 +727,7 @@ public class UsuarioController {
             HttpSession session) {
         String token = (String) session.getAttribute("token");
         if (token == null) {
-            return "redirect:/login?expired=true";
+            return "redirect:/usuario/login?expired=true";
         }
         RestTemplate restTemplate = new RestTemplate();
         try {
@@ -790,28 +793,43 @@ public class UsuarioController {
 ////--------------------------------------------------------UPDATE DIRECCION-------------------------------------------------
 
     @PostMapping("/direccion/update/{idUsuario}")
-    public String UpdareDireccion(@PathVariable int idUsuario,
+    public String UpdateDireccion(
+            @PathVariable int idUsuario,
             @ModelAttribute("direccion") Direccion direccion,
-            RedirectAttributes redirectAttributes, HttpSession session) {
+            RedirectAttributes redirectAttributes,
+            HttpSession session) {
+
         String token = (String) session.getAttribute("token");
+
         if (token == null) {
-            return "redirect:/login?expired=true";
+            return "redirect:/usuario/login?expired=true";
         }
+
         RestTemplate restTemplate = new RestTemplate();
+
         try {
-            HttpHeaders httpHeaders = new HttpHeaders();
-            httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Direccion> request = new HttpEntity<>(direccion, httpHeaders);
-            ResponseEntity<Result> responseEntity = restTemplate.exchange(
+            // ---- AGREGAR TOKEN A LA PETICIÓN ----
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
+
+            HttpEntity<Direccion> request = new HttpEntity<>(direccion, headers);
+
+            ResponseEntity<Result> response = restTemplate.exchange(
                     URL + "/update-direccion/" + idUsuario,
                     HttpMethod.PUT,
                     request,
                     new ParameterizedTypeReference<Result>() {
-            });
+            }
+            );
+
+            redirectAttributes.addFlashAttribute("mensaje", "Dirección actualizada correctamente.");
+
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("Mensaje Error", "Error al actualizar la direccion"
-                    + ex.getLocalizedMessage());
+            redirectAttributes.addFlashAttribute("mensajeError",
+                    "Error al actualizar la dirección: " + ex.getMessage());
         }
+
         return "redirect:/usuario/detail/" + idUsuario;
     }
 ////------------------------------------------------------ELIMINAR USUARIO------------------------------------------------------
@@ -898,11 +916,13 @@ public class UsuarioController {
         }
         try {
             HttpHeaders headers = new HttpHeaders();
+            headers.add("Authorization", "Bearer " + token);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<Result> response = restTemplate.exchange(
                     URL + "/delete-direccion/" + idDireccion,
                     HttpMethod.DELETE,
-                    HttpEntity.EMPTY,
+                    entity,
                     Result.class
             );
             Result result = response.getBody();
@@ -923,7 +943,11 @@ public class UsuarioController {
 
     @PostMapping("/update-imagen")
     public String UpdateImagen(@RequestParam("idUsuario") int idUsuario, @RequestParam("imagen") MultipartFile file,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, HttpSession session) {
+        String token = (String) session.getAttribute("token");
+        if (token == null) {
+            return "redirect:/usuario/login?expired=true";
+        }
         if (file.isEmpty()) {
             redirectAttributes.addFlashAttribute("mensajeError", "No se seleccionó ningún archivo");
             return "redirect:/usuario/detail/" + idUsuario;
@@ -937,6 +961,7 @@ public class UsuarioController {
             restTemplate.setRequestFactory(new HttpComponentsClientHttpRequestFactory());
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("Authorization", "Bearer " + token);
             HttpEntity<Usuario> request = new HttpEntity<>(usuario, headers);
             String url = URL + "/update-imagen/" + idUsuario;
             ResponseEntity<Result> response = restTemplate.exchange(
@@ -962,28 +987,39 @@ public class UsuarioController {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", "Bearer " + token);
+        headers.add("Content-Type", "application/json");
+        HttpEntity<Usuario> entity = new HttpEntity<>(usuario, headers);
         ResponseEntity<Result> response = restTemplate.exchange(
                 URL + "/busqueda",
                 HttpMethod.POST,
-                new HttpEntity<>(usuario),
+                entity,
                 new ParameterizedTypeReference<Result>() {
         }
         );
         Result result = response.getBody();
         ObjectMapper mapper = new ObjectMapper();
-        List<Usuario> usuariosConvertidos
-                = mapper.convertValue(result.objects, new TypeReference<List<Usuario>>() {
-                });
+
+        List<Usuario> usuariosConvertidos = mapper.convertValue(
+                result.objects,
+                new TypeReference<List<Usuario>>() {
+        }
+        );
+
+        HttpEntity<Void> entityRoles = new HttpEntity<>(headers);
+
         ResponseEntity<Result> responseRoles = restTemplate.exchange(
                 URL + "/roles",
                 HttpMethod.GET,
-                null,
+                entityRoles,
                 new ParameterizedTypeReference<Result>() {
         }
         );
-        List<Rol> roles = mapper.convertValue(responseRoles.getBody().objects,
+
+        List<Rol> roles = mapper.convertValue(
+                responseRoles.getBody().objects,
                 new TypeReference<List<Rol>>() {
-        });
+        }
+        );
         model.addAttribute("usuarios", usuariosConvertidos);
         model.addAttribute("roles", roles);
         model.addAttribute("Usuario", usuario);
@@ -992,19 +1028,40 @@ public class UsuarioController {
 //-----------------------------------------UPDATE STATUS----------------------------------------------------------------
 
     @PostMapping("/toggleStatus")
-    public String toggleStatus(@RequestParam int idUsuario,
-            @RequestParam(required = false) String status) {
-        RestTemplate restTemplate = new RestTemplate();
-        Result result = new Result();
+    public String toggleStatus(
+            @RequestParam int idUsuario,
+            @RequestParam(required = false) String status,
+            HttpSession session) {
+
+        String token = (String) session.getAttribute("token");
+
+        if (token == null) {
+            return "redirect:/usuario/login?expired=true";
+        }
+
         try {
-            String url = "http://localhost:8080/api/usuario/update-status/" + idUsuario + "/" + status;
-            restTemplate.put(url, null);  // llama al API REST
+            RestTemplate restTemplate = new RestTemplate();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Authorization", "Bearer " + token);
+
+            // Puedes enviar un body vacío pero debes mandar HttpEntity
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+            String url = "http://localhost:8080/api/usuario/update-status/"
+                    + idUsuario + "/" + status;
+
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.PUT,
+                    requestEntity,
+                    Void.class
+            );
 
         } catch (Exception ex) {
-            result.correct = false;
-            result.errorMessage = ex.getLocalizedMessage();
-            result.ex = ex;
+            System.out.println("Error al actualizar status: " + ex.getMessage());
         }
+
         return "redirect:/usuario";
     }
 

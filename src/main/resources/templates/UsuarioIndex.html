@@ -35,12 +35,14 @@
     <body layout:fragment="body" class="container-fluid p-0">
 
         <div class="encabezado">
+            <input type="hidden" id="token" th:value="${token}">
             <img src="https://img.freepik.com/vector-gratis/circulo-azul-usuario-blanco_78370-4707.jpg?semt=ais_hybrid&w=740&q=80" alt="Logo usuario">
             <h1>Bienvenido al Sistema de Usuarios</h1>
             <div style="width: 120px;"></div>
             <form th:action="@{/usuario/logout}" method="post">
                 <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
             </form>
+            <p>Rol: <span th:text="${session.rol}"></span></p>
         </div>
         <div class="text-center">
             <form method="POST" th:object="${Usuario}" th:action="@{usuario}">
@@ -223,18 +225,29 @@
                 });
             }
         </script>
-        <script>
+        <script th:inline="javascript">
+            // Obtener token desde la sesión del backend
+            const token = /*[[${session.token}]]*/ "";
+
             function toggleStatus(idUsuario, isChecked) {
                 const newStatus = isChecked ? 1 : 0;
-                fetch(`http://localhost:8080/api/usuario/update-status/${idUsuario}/${newStatus}`, {// <-- corregido
+
+                fetch(`http://localhost:8080/api/usuario/update-status/${idUsuario}/${newStatus}`, {
                     method: "PUT",
                     headers: {
+                        "Authorization": "Bearer " + token,
                         "Content-Type": "application/json"
                     }
                 })
-                        .then(response => response.json())
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error("Error en la petición");
+                            }
+                            return response.json();
+                        })
                         .then(data => {
                             console.log("Respuesta del servidor:", data);
+
                             if (!data.correct) {
                                 alert("Error: " + data.errorMessage);
                             }

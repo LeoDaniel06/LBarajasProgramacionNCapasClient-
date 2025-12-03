@@ -42,7 +42,7 @@
             <div class="text-center mb-3">
                 <h1 class="h4"><i class="bi bi-person-plus"></i> Registrar Usuario</h1>
             </div>
-
+            <input type="hidden" id="token" th:value="${token}">
             <form th:action="@{/usuario/add}" th:object="${Usuario}" method="post" enctype="multipart/form-data">
                 <div class="row g-3">
                     <!-- Nombre, Apellidos -->
@@ -231,101 +231,108 @@
             /*<![CDATA[*/
             $(document).ready(function () {
 
-            $("#imagenFile").on("change", function () {
-            const file = this.files[0];
+                $("#imagenFile").on("change", function () {
+                    const file = this.files[0];
                     if (!file) {
-            $("#preview").attr("src", "https://cdn-icons-png.flaticon.com/512/3177/3177440.png");
-                    $("#imagenHidden").val('');
-                    return;
-            }
-            const reader = new FileReader();
+                        $("#preview").attr("src", "https://cdn-icons-png.flaticon.com/512/3177/3177440.png");
+                        $("#imagenHidden").val('');
+                        return;
+                    }
+                    const reader = new FileReader();
                     reader.onload = function (e) {
-                    $("#preview").attr("src", e.target.result);
-                            // Guardar base64 en el campo que Thymeleaf mapeará a Usuario.Imagen
-                            $("#imagenHidden").val(e.target.result);
+                        $("#preview").attr("src", e.target.result);
+                        $("#imagenHidden").val(e.target.result);
                     };
                     reader.readAsDataURL(file);
-            });
+                });
             }
             );
         </script>
         <script>
             $(document).ready(function () {
-            function limpiarSelect(selectId, texto) {
-                $(selectId).empty().append('<option value="" selected>' + texto + '</option>');
-            }
-
-            $('#modalAgregarDireccion').on('show.bs.modal', function () {
-                limpiarSelect("#ddlEstado", "Seleccione un estado");
-                limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
-                limpiarSelect("#ddlColonia", "Seleccione una colonia");
-            });
-            $("#ddlPais").change(function () {
-                let IdPais = $(this).val();
-                limpiarSelect("#ddlEstado", "Seleccione un estado");
-                limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
-                limpiarSelect("#ddlColonia", "Seleccione una colonia");
-                if (!IdPais)
-                    return;
-                $.ajax({
-                    type: 'GET',
-                    url: 'http://localhost:8080/api/usuario/estados/' + IdPais,
-                    dataType: 'json',
-                    success: function (data) {
-                        $.each(data.objects, function (i, estado) {
-                            $("#ddlEstado").append('<option value="' + estado.idEstado + '">' + estado.nombre + '</option>');
-                        });
-                    },
-                    error: function () {
-                        Swal.fire('Error', 'No se pudieron cargar los estados', 'error');
-                    }
+                let token = $("#token").val();
+                function limpiarSelect(selectId, texto) {
+                    $(selectId).empty().append('<option value="" selected>' + texto + '</option>');
+                }
+                $('#modalAgregarDireccion').on('show.bs.modal', function () {
+                    limpiarSelect("#ddlEstado", "Seleccione un estado");
+                    limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+                    limpiarSelect("#ddlColonia", "Seleccione una colonia");
                 });
-            });
-            $("#ddlEstado").change(function () {
-                let IdEstado = $(this).val();
-                limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
-                limpiarSelect("#ddlColonia", "Seleccione una colonia");
-                if (!IdEstado)
-                    return;
-                $.ajax({
-                    type: 'GET',
-                    url: 'http://localhost:8080/api/usuario/municipios/' + IdEstado,
-                    dataType: 'json',
-                    success: function (data) {
-                        $.each(data.objects, function (i, municipio) {
-                            $("#ddlMunicipio").append('<option value="' + municipio.idMunicipio + '">' + municipio.nombre + '</option>');
-                        });
-                    },
-                    error: function () {
-                        Swal.fire('Error', 'No se pudieron cargar los municipios', 'error');
-                    }
+                $("#ddlPais").change(function () {
+                    let IdPais = $(this).val();
+                    limpiarSelect("#ddlEstado", "Seleccione un estado");
+                    limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+                    limpiarSelect("#ddlColonia", "Seleccione una colonia");
+                    if (!IdPais)
+                        return;
+                    $.ajax({
+                        type: 'GET',
+                        url: 'http://localhost:8080/api/usuario/estados/' + IdPais,
+                        dataType: 'json',
+                        headers: {
+                            "Authorization": "Bearer " + token
+                        },
+                        success: function (data) {
+                            $.each(data.objects, function (i, estado) {
+                                $("#ddlEstado").append('<option value="' + estado.idEstado + '">' + estado.nombre + '</option>');
+                            });
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'No se pudieron cargar los estados', 'error');
+                        }
+                    });
                 });
-            });
-            $("#ddlMunicipio").change(function () {
-            let IdMunicipio = $(this).val();
+                $("#ddlEstado").change(function () {
+                    let IdEstado = $(this).val();
+                    limpiarSelect("#ddlMunicipio", "Seleccione un municipio");
+                    limpiarSelect("#ddlColonia", "Seleccione una colonia");
+                    if (!IdEstado)
+                        return;
+                    $.ajax({
+                        type: 'GET',
+                        url: 'http://localhost:8080/api/usuario/municipios/' + IdEstado,
+                        dataType: 'json',
+                        headers: {
+                            "Authorization": "Bearer " + token
+                        },
+                        success: function (data) {
+                            $.each(data.objects, function (i, municipio) {
+                                $("#ddlMunicipio").append('<option value="' + municipio.idMunicipio + '">' + municipio.nombre + '</option>');
+                            });
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'No se pudieron cargar los municipios', 'error');
+                        }
+                    });
+                });
+                $("#ddlMunicipio").change(function () {
+                    let IdMunicipio = $(this).val();
                     limpiarSelect("#ddlColonia", "Seleccione una colonia");
                     if (!IdMunicipio)
-                    return;
+                        return;
                     $.ajax({
-                    type: 'GET',
-                            url: 'http://localhost:8080/api/usuario/colonias/' + IdMunicipio,
-                            dataType: 'json',
-                            success: function (data) {
+                        type: 'GET',
+                        url: 'http://localhost:8080/api/usuario/colonias/' + IdMunicipio,
+                        dataType: 'json',
+                        headers: {
+                            "Authorization": "Bearer " + token
+                        },
+                        success: function (data) {
                             $.each(data.objects, function (i, colonia) {
-                            $("#ddlColonia").append('<option value="' + colonia.idColonia + '">' + colonia.nombre + '</option>');
+                                $("#ddlColonia").append('<option value="' + colonia.idColonia + '">' + colonia.nombre + '</option>');
                             });
-                            },
-                            error: function () {
+                        },
+                        error: function () {
                             Swal.fire('Error', 'No se pudieron cargar las colonias', 'error');
-                            }
+                        }
                     });
+                });
             });
-            }
-            );
-
         </script>
         <script>
             function buscarPorCP() {
+
                 const cp = document.getElementById("txtCP").value.trim();
 
                 if (cp.length !== 5 || !/^\d+$/.test(cp)) {
@@ -333,16 +340,26 @@
                     return;
                 }
 
-                fetch(`http://localhost:8080/api/usuario/codigopostal/${cp}`)
+                // Obtener token desde el input oculto
+                const token = document.getElementById("token").value;
+
+                fetch(`http://localhost:8080/api/usuario/codigopostal/${cp}`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    }
+                })
                         .then(response => {
+                            if (response.status === 403) {
+                                alert("No tienes permisos para realizar esta acción.");
+                                throw new Error("403 Forbidden");
+                            }
                             if (!response.ok) {
                                 throw new Error("Código postal no encontrado");
                             }
                             return response.json();
                         })
                         .then(data => {
-
-                            // data.object contiene [colonia, municipio, estado, pais]
                             const registros = data.object;
 
                             if (!registros || registros.length === 0) {
@@ -350,35 +367,26 @@
                                 return;
                             }
 
-                            // Limpiar selects
                             limpiarDDL("ddlPais");
                             limpiarDDL("ddlEstado");
                             limpiarDDL("ddlMunicipio");
                             limpiarDDL("ddlColonia");
 
-                            // Usamos el primer registro (todos tienen referencia a los mismos municipio/estado/pais)
                             const [ColoniaJPA, MunicipioJPA, EstadoJPA, PaisJPA] = registros[0];
 
-                            // LLENAR SELECT PAÍS
                             agregarOpcion("ddlPais", PaisJPA.idPais, PaisJPA.nombre);
-
-                            // LLENAR SELECT ESTADO
                             agregarOpcion("ddlEstado", EstadoJPA.idEstado, EstadoJPA.nombre);
-
-                            // LLENAR SELECT MUNICIPIO
                             agregarOpcion("ddlMunicipio", MunicipioJPA.idMunicipio, MunicipioJPA.nombre);
 
-                            // LLENAR SELECT COLONIAS
                             registros.forEach(reg => {
                                 const col = reg[0];
-                                agregarOpcion("ddlColonia", ColoniaJPA.idColonia, ColoniaJPA.nombre);
+                                agregarOpcion("ddlColonia", col.idColonia, col.nombre);
                             });
 
-                            // MARCAR SELECTS AUTOMÁTICAMENTE
+                            // Seleccionar valores automáticos
                             document.getElementById("ddlPais").value = PaisJPA.idPais;
                             document.getElementById("ddlEstado").value = EstadoJPA.idEstado;
                             document.getElementById("ddlMunicipio").value = MunicipioJPA.idMunicipio;
-
                         })
                         .catch(error => {
                             console.error(error);
@@ -386,7 +394,6 @@
                         });
             }
 
-            // Resetea un ddl sin perder el "Selecciona" original
             function limpiarDDL(id) {
                 const ddl = document.getElementById(id);
                 ddl.innerHTML = '<option value="0">Selecciona una opción</option>';
