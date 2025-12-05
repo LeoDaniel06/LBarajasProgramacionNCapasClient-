@@ -37,6 +37,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import jakarta.servlet.http.HttpSession;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ByteArrayResource;
@@ -48,6 +49,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Controller
@@ -91,8 +93,25 @@ public class UsuarioController {
                     request,
                     TokenResponse.class
             );
-            session.setAttribute("token", response.getBody().getToken());
-            return "redirect:/usuario";
+            String token = response.getBody().getToken();
+            session.setAttribute("token", token);
+            HttpHeaders authHeaders = new HttpHeaders();
+            authHeaders.set("Authorization", "Bearer " + token);
+            HttpEntity<Void> entity = new HttpEntity<>(authHeaders);
+            ResponseEntity<Map> userInfoResponse = restTemplate.exchange(
+                    "http://localhost:8080/api/auth/user-info",
+                    HttpMethod.GET,
+                    entity,
+                    Map.class
+            );
+            Map userInfo = userInfoResponse.getBody();
+            Integer idUsuario = (Integer) userInfo.get("idUsuario");
+            String role = (String) userInfo.get("role");
+            if ("ROLE_ADMINISTRADOR".equals(role)) {
+                return "redirect:/usuario";
+            } else {
+                return "redirect:/usuario/detail/" + idUsuario;
+            }
 
         } catch (Exception e) {
             return "redirect:/usuario/login?error=true";
@@ -576,54 +595,75 @@ public class UsuarioController {
             HttpHeaders headers = new HttpHeaders();
             headers.add("Authorization", "Bearer " + token);
             HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<Result<Rol>> rolesResponse = restTemplate.exchange(
-                    URL + "/roles",
-                    HttpMethod.GET,
-                    entity,
-                    new ParameterizedTypeReference<Result<Rol>>() {
-            }
-            );
-            ResponseEntity<Result<Pais>> paisesResponse = restTemplate.exchange(
-                    URL + "/paises",
-                    HttpMethod.GET,
-                    entity,
-                    new ParameterizedTypeReference<Result<Pais>>() {
-            }
-            );
-            model.addAttribute("roles", rolesResponse.getBody().objects);
-            model.addAttribute("paises", paisesResponse.getBody().objects);
-            int idPais = usuario.DireccionesJPA.get(0).getColoniaJPA().getMunicipioJPA().getEstadoJPA().getPaisJPA().getIdPais();
-            if (idPais > 0) {
-                ResponseEntity<Result<Estado>> estadosResponse = restTemplate.exchange(
-                        URL + "/estados/" + idPais,
-                        HttpMethod.GET,
-                        entity,
-                        new ParameterizedTypeReference<Result<Estado>>() {
+            try {
+                ResponseEntity<Result<Rol>> rolesResponse
+                        = restTemplate.exchange(
+                                URL + "/roles",
+                                HttpMethod.GET,
+                                entity,
+                                new ParameterizedTypeReference<Result<Rol>>() {
+                        }
+                        );
+                model.addAttribute("roles", rolesResponse.getBody().objects);
+                ResponseEntity<Result<Pais>> paisesResponse
+                        = restTemplate.exchange(
+                                URL + "/paises",
+                                HttpMethod.GET,
+                                entity,
+                                new ParameterizedTypeReference<Result<Pais>>() {
+                        }
+                        );
+                model.addAttribute("paises", paisesResponse.getBody().objects);
+                int idPais = usuario.DireccionesJPA.get(0).getColoniaJPA().getMunicipioJPA()
+                        .getEstadoJPA().getPaisJPA().getIdPais();
+                if (idPais > 0) {
+                    ResponseEntity<Result<Estado>> estadosResponse
+                            = restTemplate.exchange(
+                                    URL + "/estados/" + idPais,
+                                    HttpMethod.GET,
+                                    entity,
+                                    new ParameterizedTypeReference<Result<Estado>>() {
+                            }
+                            );
+                    model.addAttribute("estados", estadosResponse.getBody().objects);
                 }
-                );
-                model.addAttribute("estados", estadosResponse.getBody().objects);
-            }
-            int idEstado = usuario.DireccionesJPA.get(0).getColoniaJPA().getMunicipioJPA().getEstadoJPA().getIdEstado();
-            if (idEstado > 0) {
-                ResponseEntity<Result<Municipio>> municipiosResponse = restTemplate.exchange(
-                        URL + "/municipios/" + idEstado,
-                        HttpMethod.GET,
-                        entity,
-                        new ParameterizedTypeReference<Result<Municipio>>() {
+                int idEstado = usuario.DireccionesJPA.get(0).getColoniaJPA().getMunicipioJPA()
+                        .getEstadoJPA().getIdEstado();
+                if (idEstado > 0) {
+                    ResponseEntity<Result<Municipio>> municipiosResponse
+                            = restTemplate.exchange(
+                                    URL + "/municipios/" + idEstado,
+                                    HttpMethod.GET,
+                                    entity,
+                                    new ParameterizedTypeReference<Result<Municipio>>() {
+                            }
+                            );
+                    model.addAttribute("municipios", municipiosResponse.getBody().objects);
                 }
-                );
-                model.addAttribute("municipios", municipiosResponse.getBody().objects);
-            }
-            int idMunicipio = usuario.DireccionesJPA.get(0).getColoniaJPA().getMunicipioJPA().getIdMunicipio();
-            if (idMunicipio > 0) {
-                ResponseEntity<Result<Colonia>> coloniasResponse = restTemplate.exchange(
-                        URL + "/colonias/" + idMunicipio,
-                        HttpMethod.GET,
-                        entity,
-                        new ParameterizedTypeReference<Result<Colonia>>() {
+                int idMunicipio = usuario.DireccionesJPA.get(0).getColoniaJPA().getMunicipioJPA()
+                        .getIdMunicipio();
+                if (idMunicipio > 0) {
+                    ResponseEntity<Result<Colonia>> coloniasResponse
+                            = restTemplate.exchange(
+                                    URL + "/colonias/" + idMunicipio,
+                                    HttpMethod.GET,
+                                    entity,
+                                    new ParameterizedTypeReference<Result<Colonia>>() {
+                            }
+                            );
+                    model.addAttribute("colonias", coloniasResponse.getBody().objects);
                 }
+            } catch (HttpClientErrorException e) {
+                int status = e.getStatusCode().value();
+                if (status == 440) {
+                    return "redirect:/usuario/login?rateLimit=true";
+                }
+                if (status == 401 || status == 403) {
+                    return "redirect:/usuario/login?expired=true";
+                }
+                redirectAttributes.addFlashAttribute(
+                        "MensajeError", "Error HTTP: " + status
                 );
-                model.addAttribute("colonias", coloniasResponse.getBody().objects);
             }
             return "UsuarioForm";
         }
@@ -636,38 +676,65 @@ public class UsuarioController {
                 usuario.setImagen(null);
             }
         } catch (IOException ex) {
-            redirectAttributes.addFlashAttribute("MensajeError", "Error al procesar la imagen");
+            redirectAttributes.addFlashAttribute(
+                    "MensajeError", "Error al procesar la imagen"
+            );
             return "redirect:/usuario/add";
         }
         try {
             RestTemplate restTemplate = new RestTemplate();
-
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
             headers.add("Authorization", "Bearer " + token);
+            headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Usuario> request = new HttpEntity<>(usuario, headers);
+            try {
+                ResponseEntity<Result> response = restTemplate.exchange(
+                        URL + "/add",
+                        HttpMethod.POST,
+                        request,
+                        new ParameterizedTypeReference<Result>() {
+                }
+                );
+                Result result = response.getBody();
 
-            ResponseEntity<Result> response = restTemplate.exchange(
-                    URL + "/add",
-                    HttpMethod.POST,
-                    request,
-                    Result.class
-            );
-            Result result = response.getBody();
-            if (result != null && result.correct) {
-                redirectAttributes.addFlashAttribute("MensajeExito", "Usuario agregado correctamente");
-            } else {
-                redirectAttributes.addFlashAttribute("MensajeError",
-                        "Error: " + (result != null ? result.errorMessage : "desconocido"));
+                if (result != null && result.correct) {
+                    redirectAttributes.addFlashAttribute(
+                            "MensajeExito",
+                            "Usuario agregado correctamente"
+                    );
+                } else {
+                    String error = (result != null)
+                            ? result.errorMessage
+                            : "Error desconocido";
+                    redirectAttributes.addFlashAttribute(
+                            "MensajeError",
+                            "Error: " + error
+                    );
+                }
+            } catch (HttpClientErrorException e) {
+                int status = e.getStatusCode().value();
+                if (status == 440) {
+                    return "redirect:/usuario/login?rateLimit=true";
+                }
+                if (status == 401 || status == 403) {
+                    return "redirect:/usuario/login?expired=true";
+                }
+                redirectAttributes.addFlashAttribute(
+                        "MensajeError",
+                        "Error HTTP: " + status
+                );
+                return "redirect:/usuario/add";
             }
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("MensajeError", "Error al comunicar con el servicio: " + ex.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "MensajeError",
+                    "Error al comunicar con el servicio: " + ex.getMessage()
+            );
             return "redirect:/usuario/add";
         }
         return "redirect:/usuario";
     }
 //---------------------------------------------------------DDLS DIRECCION-----------------------------------------------------------------
-
     @GetMapping("/Estados/{IdPais}")
     public Result EstadosGETBYIDPais(@PathVariable int IdPais, Model model) {
         Result result = new Result();
@@ -732,27 +799,52 @@ public class UsuarioController {
         RestTemplate restTemplate = new RestTemplate();
         try {
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
             headers.add("Authorization", "Bearer " + token);
-            HttpEntity<Usuario> request = new HttpEntity<>(usuario, headers);
-            ResponseEntity<Result> response = restTemplate.exchange(
-                    URL + "/update",
-                    HttpMethod.PUT,
-                    request,
-                    Result.class
-            );
-            Result result = response.getBody();
-            if (result != null && result.correct) {
-                redirectAttributes.addFlashAttribute("mensajeExito",
-                        "Se actualizaron los datos de " + usuario.getUserName());
-            } else {
-                String errorMsg = (result != null) ? result.errorMessage : "Error desconocido";
-                redirectAttributes.addFlashAttribute("mensajeError",
-                        "Error al actualizar datos: " + errorMsg);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Usuario> request
+                    = new HttpEntity<>(usuario, headers);
+            try {
+                ResponseEntity<Result> response = restTemplate.exchange(
+                        URL + "/update",
+                        HttpMethod.PUT,
+                        request,
+                        new ParameterizedTypeReference<Result>() {
+                }
+                );
+                Result result = response.getBody();
+                if (result != null && result.correct) {
+                    redirectAttributes.addFlashAttribute(
+                            "mensajeExito",
+                            "Se actualizaron los datos de " + usuario.getUserName()
+                    );
+                } else {
+                    String errorMsg = (result != null)
+                            ? result.errorMessage
+                            : "Error desconocido";
+                    redirectAttributes.addFlashAttribute(
+                            "mensajeError",
+                            "Error al actualizar datos: " + errorMsg
+                    );
+                }
+            } catch (HttpClientErrorException e) {
+                int status = e.getStatusCode().value();
+                if (status == 440) {
+                    return "redirect:/usuario/login?rateLimit=true";
+                }
+                if (status == 401 || status == 403) {
+                    return "redirect:/usuario/login?expired=true";
+                }
+                redirectAttributes.addFlashAttribute(
+                        "mensajeError",
+                        "Error HTTP: " + status
+                );
+                return "redirect:/usuario/detail/" + usuario.getIdUsuario();
             }
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("mensajeError",
-                    "Error al conectar con el servicio: " + ex.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "mensajeError",
+                    "Error al conectar con el servicio: " + ex.getMessage()
+            );
         }
         return "redirect:/usuario/detail/" + usuario.getIdUsuario();
     }
@@ -762,7 +854,8 @@ public class UsuarioController {
     public String addDireccion(
             @PathVariable int idUsuario,
             @ModelAttribute("direccion") Direccion direccion,
-            RedirectAttributes redirectAttributes, HttpSession session) {
+            RedirectAttributes redirectAttributes,
+            HttpSession session) {
         String token = (String) session.getAttribute("token");
         if (token == null) {
             return "redirect:/usuario/login?expired=true";
@@ -772,21 +865,51 @@ public class UsuarioController {
             HttpHeaders httpHeaders = new HttpHeaders();
             httpHeaders.add("Authorization", "Bearer " + token);
             httpHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Direccion> request = new HttpEntity<>(direccion, httpHeaders);
-            ResponseEntity<Result> response = restTemplate.exchange(
-                    URL + "/add-direccion/" + idUsuario,
-                    HttpMethod.POST,
-                    request,
-                    new ParameterizedTypeReference<Result>() {
-            });
-            if (response.getBody().correct) {
-                redirectAttributes.addFlashAttribute("Mensaje Exito", "Direccion agregada correctamenete");
-            } else {
-                redirectAttributes.addFlashAttribute("Mensaje Error", "Erro al agregar la direccion"
-                        + response.getBody().errorMessage);
+            HttpEntity<Direccion> request
+                    = new HttpEntity<>(direccion, httpHeaders);
+
+            try {
+                ResponseEntity<Result> response = restTemplate.exchange(
+                        URL + "/add-direccion/" + idUsuario,
+                        HttpMethod.POST,
+                        request,
+                        new ParameterizedTypeReference<Result>() {
+                }
+                );
+                Result result = response.getBody();
+                if (result != null && result.correct) {
+                    redirectAttributes.addFlashAttribute(
+                            "MensajeExito",
+                            "Dirección agregada correctamente"
+                    );
+                } else {
+                    String errorMsg = (result != null)
+                            ? result.errorMessage
+                            : "Error desconocido";
+                    redirectAttributes.addFlashAttribute(
+                            "MensajeError",
+                            "Error al agregar la dirección: " + errorMsg
+                    );
+                }
+            } catch (HttpClientErrorException e) {
+                int status = e.getStatusCode().value();
+                if (status == 440) {
+                    return "redirect:/usuario/login?rateLimit=true";
+                }
+                if (status == 401 || status == 403) {
+                    return "redirect:/usuario/login?expired=true";
+                }
+                redirectAttributes.addFlashAttribute(
+                        "MensajeError",
+                        "Error HTTP: " + status
+                );
+                return "redirect:/usuario/detail/" + idUsuario;
             }
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("Mensaje Error", "Error al conectar con el servicio" + ex.getLocalizedMessage());
+            redirectAttributes.addFlashAttribute(
+                    "MensajeError",
+                    "Error al conectar con el servicio: " + ex.getMessage()
+            );
         }
         return "redirect:/usuario/detail/" + idUsuario;
     }
@@ -798,44 +921,51 @@ public class UsuarioController {
             @ModelAttribute("direccion") Direccion direccion,
             RedirectAttributes redirectAttributes,
             HttpSession session) {
-
         String token = (String) session.getAttribute("token");
-
         if (token == null) {
             return "redirect:/usuario/login?expired=true";
         }
-
         RestTemplate restTemplate = new RestTemplate();
-
         try {
-            // ---- AGREGAR TOKEN A LA PETICIÓN ----
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Authorization", "Bearer " + token);
-
             HttpEntity<Direccion> request = new HttpEntity<>(direccion, headers);
-
-            ResponseEntity<Result> response = restTemplate.exchange(
-                    URL + "/update-direccion/" + idUsuario,
-                    HttpMethod.PUT,
-                    request,
-                    new ParameterizedTypeReference<Result>() {
+            try {
+                ResponseEntity<Result> response = restTemplate.exchange(
+                        URL + "/update-direccion/" + idUsuario,
+                        HttpMethod.PUT,
+                        request,
+                        new ParameterizedTypeReference<Result>() {
+                }
+                );
+                redirectAttributes.addFlashAttribute("mensaje",
+                        "Dirección actualizada correctamente.");
+            } catch (HttpClientErrorException e) {
+                int status = e.getStatusCode().value();
+                if (status == 440) {
+                    return "redirect:/usuario/login?rateLimit=true";
+                }
+                if (status == 401 || status == 403) {
+                    return "redirect:/usuario/login?expired=true";
+                }
+                redirectAttributes.addFlashAttribute("mensajeError",
+                        "Error HTTP: " + status);
+                return "redirect:/usuario/detail/" + idUsuario;
             }
-            );
-
-            redirectAttributes.addFlashAttribute("mensaje", "Dirección actualizada correctamente.");
-
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute("mensajeError",
                     "Error al actualizar la dirección: " + ex.getMessage());
         }
-
         return "redirect:/usuario/detail/" + idUsuario;
     }
 ////------------------------------------------------------ELIMINAR USUARIO------------------------------------------------------
 
     @PostMapping("/delete")
-    public String eliminarUsuario(@RequestParam int idUsuario, RedirectAttributes redirectAttributes, HttpSession session) {
+    public String eliminarUsuario(@RequestParam int idUsuario,
+            RedirectAttributes redirectAttributes,
+            HttpSession session) {
+
         String token = (String) session.getAttribute("token");
         if (token == null) {
             return "redirect:/usuario/login?expired=true";
@@ -845,27 +975,39 @@ public class UsuarioController {
             HttpHeaders headers = new HttpHeaders();
             headers.add("Authorization", "Bearer " + token);
             HttpEntity<String> entity = new HttpEntity<>(headers);
-            ResponseEntity<Result> response = restTemplate.exchange(
-                    URL + "/delete-usuario/" + idUsuario,
-                    HttpMethod.DELETE,
-                    entity,
-                    Result.class
-            );
-
-            Result result = response.getBody();
-
-            if (result != null && result.correct) {
-                redirectAttributes.addFlashAttribute("mensajeExito", "Usuario eliminado correctamente");
-            } else {
-                String errorMsg = (result != null) ? result.errorMessage : "Error desconocido";
-                redirectAttributes.addFlashAttribute("mensajeError", "Error al eliminar usuario: " + errorMsg);
+            try {
+                ResponseEntity<Result> response = restTemplate.exchange(
+                        URL + "/delete-usuario/" + idUsuario,
+                        HttpMethod.DELETE,
+                        entity,
+                        Result.class
+                );
+                Result result = response.getBody();
+                if (result != null && result.correct) {
+                    redirectAttributes.addFlashAttribute("mensajeExito",
+                            "Usuario eliminado correctamente");
+                } else {
+                    String errorMsg = (result != null) ? result.errorMessage : "Error desconocido";
+                    redirectAttributes.addFlashAttribute("mensajeError",
+                            "Error al eliminar usuario: " + errorMsg);
+                }
+            } catch (HttpClientErrorException e) {
+                int status = e.getStatusCode().value();
+                if (status == 440) {
+                    return "redirect:/usuario/login?rateLimit=true";
+                }
+                if (status == 401 || status == 403) {
+                    return "redirect:/usuario/login?expired=true";
+                }
+                redirectAttributes.addFlashAttribute("mensajeError",
+                        "Error HTTP: " + status);
+                return "redirect:/usuario";
             }
-
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("mensajeError", "Error al conectar con el servicio: " + ex.getMessage());
+            redirectAttributes.addFlashAttribute("mensajeError",
+                    "Error al conectar con el servicio: " + ex.getMessage());
             ex.printStackTrace();
         }
-
         return "redirect:/usuario";
     }
 
@@ -909,7 +1051,8 @@ public class UsuarioController {
     @PostMapping("/direccion/delete/{idUsuario}")
     public String deleteDireccion(@PathVariable int idUsuario,
             @RequestParam int idDireccion,
-            RedirectAttributes redirectAttributes, HttpSession session) {
+            RedirectAttributes redirectAttributes,
+            HttpSession session) {
         String token = (String) session.getAttribute("token");
         if (token == null) {
             return "redirect:/usuario/login?expired=true";
@@ -919,22 +1062,37 @@ public class UsuarioController {
             headers.add("Authorization", "Bearer " + token);
             HttpEntity<String> entity = new HttpEntity<>(headers);
             RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<Result> response = restTemplate.exchange(
-                    URL + "/delete-direccion/" + idDireccion,
-                    HttpMethod.DELETE,
-                    entity,
-                    Result.class
-            );
-            Result result = response.getBody();
-
-            if (result != null && result.correct) {
-                redirectAttributes.addFlashAttribute("MensajeExito", "Dirección eliminada correctamente");
-            } else {
-                String errorMsg = (result != null) ? result.errorMessage : "Error desconocido";
-                redirectAttributes.addFlashAttribute("MensajeError", "No se pudo eliminar la dirección: " + errorMsg);
+            try {
+                ResponseEntity<Result> response = restTemplate.exchange(
+                        URL + "/delete-direccion/" + idDireccion,
+                        HttpMethod.DELETE,
+                        entity,
+                        Result.class
+                );
+                Result result = response.getBody();
+                if (result != null && result.correct) {
+                    redirectAttributes.addFlashAttribute("MensajeExito",
+                            "Dirección eliminada correctamente");
+                } else {
+                    String errorMsg = (result != null) ? result.errorMessage : "Error desconocido";
+                    redirectAttributes.addFlashAttribute("MensajeError",
+                            "No se pudo eliminar la dirección: " + errorMsg);
+                }
+            } catch (HttpClientErrorException e) {
+                int status = e.getStatusCode().value();
+                if (status == 440) {
+                    return "redirect:/usuario/login?rateLimit=true";
+                }
+                if (status == 401 || status == 403) {
+                    return "redirect:/usuario/login?expired=true";
+                }
+                redirectAttributes.addFlashAttribute("MensajeError",
+                        "Error HTTP: " + status);
+                return "redirect:/usuario/detail/" + idUsuario;
             }
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("MensajeError", "Error al conectar con el servicio: " + ex.getMessage());
+            redirectAttributes.addFlashAttribute("MensajeError",
+                    "Error al conectar con el servicio: " + ex.getMessage());
             ex.printStackTrace();
         }
         return "redirect:/usuario/detail/" + idUsuario;
@@ -942,8 +1100,10 @@ public class UsuarioController {
 ////-------------------------------------IMAGEN UPDATE----------------------------------------------------------
 
     @PostMapping("/update-imagen")
-    public String UpdateImagen(@RequestParam("idUsuario") int idUsuario, @RequestParam("imagen") MultipartFile file,
-            RedirectAttributes redirectAttributes, HttpSession session) {
+    public String UpdateImagen(@RequestParam("idUsuario") int idUsuario,
+            @RequestParam("imagen") MultipartFile file,
+            RedirectAttributes redirectAttributes,
+            HttpSession session) {
         String token = (String) session.getAttribute("token");
         if (token == null) {
             return "redirect:/usuario/login?expired=true";
@@ -964,20 +1124,35 @@ public class UsuarioController {
             headers.add("Authorization", "Bearer " + token);
             HttpEntity<Usuario> request = new HttpEntity<>(usuario, headers);
             String url = URL + "/update-imagen/" + idUsuario;
-            ResponseEntity<Result> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.PATCH,
-                    request,
-                    Result.class
-            );
+            try {
+                ResponseEntity<Result> response = restTemplate.exchange(
+                        url,
+                        HttpMethod.PATCH,
+                        request,
+                        Result.class
+                );
+            } catch (HttpClientErrorException ex) {
+                if (ex.getStatusCode().value() == 440) {
+                    return "redirect:/usuario/login?rateLimit=true";
+                }
+                if (ex.getStatusCode().value() == 401 || ex.getStatusCode().value() == 403) {
+                    return "redirect:/usuario/login?expired=true";
+                }
+                redirectAttributes.addFlashAttribute("mensajeError",
+                        "Error HTTP: " + ex.getStatusCode().value());
+                return "redirect:/usuario/detail/" + idUsuario;
+            }
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("mensajeError", "Error al procesar la imagen: " + ex.getMessage());
+            redirectAttributes.addFlashAttribute("mensajeError",
+                    "Error al procesar la imagen: " + ex.getMessage());
             ex.printStackTrace();
+            return "redirect:/usuario/detail/" + idUsuario;
         }
+
         return "redirect:/usuario/detail/" + idUsuario;
     }
-////---------------------------------------------------BUCADOR DINAMICO----------------------------------------------------
 
+////---------------------------------------------------BUCADOR DINAMICO----------------------------------------------------
     @PostMapping()
     public String BuscarUsuario(@ModelAttribute("Usuario") Usuario usuario, Model model, HttpSession session) {
         String token = (String) session.getAttribute("token");
@@ -989,22 +1164,34 @@ public class UsuarioController {
         headers.add("Authorization", "Bearer " + token);
         headers.add("Content-Type", "application/json");
         HttpEntity<Usuario> entity = new HttpEntity<>(usuario, headers);
-        ResponseEntity<Result> response = restTemplate.exchange(
-                URL + "/busqueda",
-                HttpMethod.POST,
-                entity,
-                new ParameterizedTypeReference<Result>() {
+        Result result;
+        try {
+            ResponseEntity<Result> response = restTemplate.exchange(
+                    URL + "/busqueda",
+                    HttpMethod.POST,
+                    entity,
+                    new ParameterizedTypeReference<Result>() {
+            }
+            );
+            result = response.getBody();
+        } catch (HttpClientErrorException ex) {
+            if (ex.getStatusCode().value() == 440) {
+                return "redirect:/usuario/login?rateLimit=true";
+            }
+            if (ex.getStatusCode().value() == 401 || ex.getStatusCode().value() == 403) {
+                return "redirect:/usuario/login?expired=true";
+            }
+            return "redirect:/usuario/login?error=true";
         }
-        );
-        Result result = response.getBody();
+        if (result == null || result.objects == null) {
+            return "redirect:/usuario/login?rateLimit=true";
+        }
         ObjectMapper mapper = new ObjectMapper();
-
         List<Usuario> usuariosConvertidos = mapper.convertValue(
                 result.objects,
                 new TypeReference<List<Usuario>>() {
         }
         );
-
         HttpEntity<Void> entityRoles = new HttpEntity<>(headers);
 
         ResponseEntity<Result> responseRoles = restTemplate.exchange(
@@ -1014,7 +1201,6 @@ public class UsuarioController {
                 new ParameterizedTypeReference<Result>() {
         }
         );
-
         List<Rol> roles = mapper.convertValue(
                 responseRoles.getBody().objects,
                 new TypeReference<List<Rol>>() {
@@ -1025,46 +1211,6 @@ public class UsuarioController {
         model.addAttribute("Usuario", usuario);
         return "UsuarioIndex";
     }
-//-----------------------------------------UPDATE STATUS----------------------------------------------------------------
-
-    @PostMapping("/toggleStatus")
-    public String toggleStatus(
-            @RequestParam int idUsuario,
-            @RequestParam(required = false) String status,
-            HttpSession session) {
-
-        String token = (String) session.getAttribute("token");
-
-        if (token == null) {
-            return "redirect:/usuario/login?expired=true";
-        }
-
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + token);
-
-            // Puedes enviar un body vacío pero debes mandar HttpEntity
-            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
-
-            String url = "http://localhost:8080/api/usuario/update-status/"
-                    + idUsuario + "/" + status;
-
-            restTemplate.exchange(
-                    url,
-                    HttpMethod.PUT,
-                    requestEntity,
-                    Void.class
-            );
-
-        } catch (Exception ex) {
-            System.out.println("Error al actualizar status: " + ex.getMessage());
-        }
-
-        return "redirect:/usuario";
-    }
-
 //----------------------------------------CARGA MASIVA-----------------------------------------   
 //    @GetMapping("/carga")
 //    public String mostrarCargaMasiva(Model model) {

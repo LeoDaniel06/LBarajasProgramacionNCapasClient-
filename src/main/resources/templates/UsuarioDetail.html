@@ -97,7 +97,9 @@
     <body layout:fragment="body">
         <input type="hidden" id="token" th:value="${token}">
         <div class="encabezado">Datos de Usuario</div>
-
+        <form th:action="@{/usuario/logout}" method="post">
+            <button type="submit" class="btn btn-danger">Cerrar Sesión</button>
+        </form>
         <div class="contenido">
             <!-- Sección de usuario -->
             <div class="row align-items-center mb-4">
