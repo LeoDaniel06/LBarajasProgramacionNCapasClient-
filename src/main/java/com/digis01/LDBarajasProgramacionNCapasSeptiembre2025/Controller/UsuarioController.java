@@ -44,6 +44,8 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -56,7 +58,6 @@ import org.springframework.web.client.RestTemplate;
 @RequestMapping("/usuario")
 public class UsuarioController {
 
-//    private RestTemplate restTemplate;
     private final String URL = "http://localhost:8080/api/usuario";
     private final String AUTH_URL = "http://localhost:8080/api/auth/login";
 //------------------------------------------------------LOGIN Y LOGOUT-----------------------------------------------------
@@ -113,7 +114,21 @@ public class UsuarioController {
                 return "redirect:/usuario/detail/" + idUsuario;
             }
 
-        } catch (Exception e) {
+        } catch (HttpClientErrorException e) {
+            if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                return "redirect:/usuario/login?error=true";
+            }
+            if (e.getStatusCode() == HttpStatus.FORBIDDEN) {
+                String mensaje = e.getResponseBodyAsString();
+                if (mensaje.contains("inactivo")) {
+                    return "redirect:/usuario/login?usuarioInactivo=true";
+                }
+                if (mensaje.contains("verificado")) {
+                    model.addAttribute("noVerificado", true);
+                    model.addAttribute("usernameIntentado", loginRequest.getUsername());
+                    return "UsuarioLogin";
+                }
+            }
             return "redirect:/usuario/login?error=true";
         }
     }
@@ -735,6 +750,7 @@ public class UsuarioController {
         return "redirect:/usuario";
     }
 //---------------------------------------------------------DDLS DIRECCION-----------------------------------------------------------------
+
     @GetMapping("/Estados/{IdPais}")
     public Result EstadosGETBYIDPais(@PathVariable int IdPais, Model model) {
         Result result = new Result();
@@ -1211,7 +1227,31 @@ public class UsuarioController {
         model.addAttribute("Usuario", usuario);
         return "UsuarioIndex";
     }
-//----------------------------------------CARGA MASIVA-----------------------------------------   
+//----------------------------------------VERIFICACION-------------------------------------------------------------
+
+    @GetMapping("/verificado")
+    public String CuentaVerificada() {
+        return "UsuarioVerificacion";
+    }
+
+    @GetMapping("/verificcacion-error")
+
+    public String VerificacionError() {
+        return "UsuarioVerificacionError";
+    }
+//----------------------------------------VERIFICACION REENVIAR CORREO---------------------------------------------
+
+    @PostMapping("/reenviar-correo")
+    public String Reenviarcorreo(@RequestParam String username) {
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.postForEntity(
+                URL + "/reenviar-verificacion?username=" + username,
+                null,
+                Void.class
+        );
+        return "redirect:/usuario/login?correoEnviado=true";
+    }
+//----------------------------------------CARGA MASIVA-------------------------------------------------------------
 //    @GetMapping("/carga")
 //    public String mostrarCargaMasiva(Model model) {
 //        return "UsuarioCargaMasiva";

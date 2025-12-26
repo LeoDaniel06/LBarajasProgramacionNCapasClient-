@@ -73,6 +73,8 @@ public class Usuario {
 
     private int Status;
     
+    private int IsVerified;
+    
     public String getImagen() {
         return Imagen;
     }
@@ -211,7 +213,13 @@ public class Usuario {
         this.Status = Status;
     }
 
-    
+    public int getIsVerified() {
+        return IsVerified;
+    }
+
+    public void setIsVerified(int IsVerified) {
+        this.IsVerified = IsVerified;
+    }
 
     public List<Direccion> getDireccionesJPA() {
         return DireccionesJPA;

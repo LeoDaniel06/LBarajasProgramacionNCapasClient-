@@ -34,7 +34,7 @@
     </head>
     <body layout:fragment="body" class="container-fluid p-0">
 
-        <div class="encabezado">
+        <div class="encabezado"     >
             <input type="hidden" id="token" th:value="${token}">
             <img src="https://img.freepik.com/vector-gratis/circulo-azul-usuario-blanco_78370-4707.jpg?semt=ais_hybrid&w=740&q=80" alt="Logo usuario">
             <h1>Bienvenido al Sistema de Usuarios</h1>
@@ -50,10 +50,7 @@
                     <h5 class="mb-4 text-primary">
                         <i class="bi bi-person-lines-fill me-2"></i>Datos del Usuario
                     </h5>
-
                     <div class="row g-4">
-
-                        <!-- Nombre -->
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-person"></i> Nombre
@@ -62,8 +59,6 @@
                                    placeholder="Nombre"
                                    th:field="*{nombre}">
                         </div>
-
-                        <!-- Apellido Paterno -->
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-person-badge"></i> Apellido Paterno
@@ -72,8 +67,6 @@
                                    placeholder="Apellido Paterno"
                                    th:field="*{ApellidoPat}">
                         </div>
-
-                        <!-- Apellido Materno -->
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">
                                 <i class="bi bi-person-badge-fill"></i> Apellido Materno
